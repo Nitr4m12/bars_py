@@ -15,13 +15,12 @@ class Header(struct.Struct):
 		 self.reserved,
 		 self.count) = self.unpack_from(data, pos)
 
-class TRKInfo(struct.Struct):
-	# Unknown bytes, but I'm guessing track info
+class TRKStruct(struct.Struct):
 	def __init__(self, bom, count):
-		super().__init__(f'{bom}{count}I')
-
+		super().__init__(f"{bom}{count*2}I")
+	
 	def data(self, data, pos):
-		self.unknown = self.unpack_from(data, pos)
+		(self.offsets) = self.unpack_from(data, pos)
 
 class AMTAHeader(struct.Struct):
 	# Amta Header
@@ -38,7 +37,7 @@ class AMTAHeader(struct.Struct):
 		 self.ext_offset,
 		 self.strg_offset) = self.unpack_from(data, pos)
 
-class BLKHeader(struct.Struct):
+class AMTASubHeader(struct.Struct):
 	# Header for DATA, MARK, EXT_ and STRG sections
 	def __init__(self, bom):
 		super().__init__(bom + "4sI")
@@ -56,13 +55,6 @@ class FWAVHeader(struct.Struct):
 		 self.size_,
 		 self.info_offset,
 		 self.data_offset) = self.unpack_from(data, pos)
-
-class TRKStruct(struct.Struct):
-	def __init__(self, bom, count):
-		super().__init__(f"{bom}{count*2}I")
-	
-	def data(self, data, pos):
-		(self.offsets) = self.unpack_from(data, pos)
 
 # Magic numbers, commonly known as "headers"
 
