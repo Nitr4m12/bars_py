@@ -7,12 +7,66 @@ __author__ = "Nitr4m12(based on bars_convertor.py from Peter Wunder (@SamusAranX
 __license__ = "WTFPL"
 
 from utils import *
+from typing import List
 import bcf_converter as sound
 
 def plural_s(n):
 	return "s" if n != 1 else ""
 
-def convert_bars(f, dest_bom, bom):
+def get_bars_tracks(bars: bytearray, swap_endian: bool=False):
+
+	if bars[0x8:0x12] == b"\xFF\xFE":
+		bom = '<'
+	else:
+		bom = '>'
+
+	# Set our position to the start of the file
+	file_size: int = len(bars)
+	pos: int = 0
+
+	# Create a structure for the header
+	header: Header(bom) #= Header(bom)
+	header.data(bars, pos)
+
+	# Check for an invalid file
+	if header.magic != BARS_HEADER:
+		return False
+
+	if header.size_ != file_size:
+		return False
+
+	# Offset an amount of header.size
+	pos += header.size + header.count * 4
+
+	# Create a structure for the track structure
+	track_struct = TRKStruct(bom, header.count)
+	track_struct.data(bars, pos)
+
+	tracks: List[bytearray]
+
+	for t in range(header.count):
+		# Get the offset of our track
+		pos = track_struct.offsets[t * 2 + 1] 
+
+		if bars_track_offset >= header.size_: 
+			# The offset the file is telling us to jump to can't exist because the file's too small
+			continue
+
+		fwav = FWAVHeader(bom)
+		fwav.data(bars, pos)
+
+		fwav.data_ = bars[pos:pos + fwav.size_]
+
+		tracks.append(fwav.data_)
+
+	return tracks
+		
+def read_bars(bars, dest_bom):
+
+	if bars[0x8:0x12] == b"\xFF\xFE":
+		bom = '<'
+	else:
+		bom = '>'
 
 	# Create an output buffer the length of our file
 	output_buffer = bytearray(len(f))
