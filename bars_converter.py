@@ -39,7 +39,7 @@ def get_bars_tracks(bars: bytearray, swap_endian: bool=False):
 	pos += header.size + header.count * 4
 
 	# Create a structure for the track structure
-	track_struct = TRKStruct(bom, header.count)
+	track_struct: TRKStruct(bom, header.count) #= TRKStruct(bom, header.count)
 	track_struct.data(bars, pos)
 
 	tracks: List[bytearray]
@@ -60,6 +60,16 @@ def get_bars_tracks(bars: bytearray, swap_endian: bool=False):
 		tracks.append(fwav.data_)
 
 	return tracks
+
+def convert_track(track: bytearray, dest_bom: str):
+	# Read the header of our track
+	dest: str = track[:0x4].decode('utf-8')
+
+	# Run the track through the converter
+	new_track: bytearray = sound.convFile(track, dest, dest_bom)
+	track = new_track
+
+	return track
 		
 def read_bars(bars, dest_bom):
 
@@ -129,10 +139,10 @@ def read_bars(bars, dest_bom):
 
 		for i in MAGICS:
 
-			data = BLKHeader(bom)
+			data = AMTASubHeader(bom)
 			data.data(f, pos)
 				
-			output_buffer[pos:pos + data.size] = bytes(BLKHeader(dest_bom).pack(data.magic, data.length))
+			output_buffer[pos:pos + data.size] = bytes(AMTASubHeader(dest_bom).pack(data.magic, data.length))
 			pos += data.size
 
 			data.data_ = f[pos:pos + data.length]
