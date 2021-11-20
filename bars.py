@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python3
 
-"""bars_converter.py: converts BARS files between platforms"""
+"""bars.py: a python module to work with the BARS format"""
 
 __author__ = "Nitr4m12(based on bars_convertor.py from Peter Wunder (@SamusAranX))"
 __license__ = "WTFPL"
