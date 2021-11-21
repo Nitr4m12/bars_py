@@ -19,10 +19,10 @@ def plural_s(n):
 def get_bars_tracks(bars):
 
 	"""
-	Get the tracks and offsets to them inside the bars file, and return 
-	two dictionaries: one containing the tracks, with their names as keys,
-	and another one containing each track's offset, with the track names as
-	keys as well
+	Get the tracks from inside the bars file, alongside their respective
+	offsets and return two dictionaries: one containing the tracks, with 
+	their names as keys, and another one containing each track's offset, 
+	with the track names as keys as well
 	"""
 
 	if bars[0x8:0xA] == b"\xFF\xFE":
@@ -193,7 +193,7 @@ def convert_bars(bars, dest_bom):
 			pos += data.length
 		
 			if data.magic != j:
-				raise RuntimeError(f"Track {t+1} has an invalid {data.magic} header")
+				raise RuntimeError(f"Track {i+1} has an invalid {data.magic} header")
 	# Print out the number of tracks found
 	print(f"{header.count} track{plural_s(header.count)} found!")
 
