@@ -104,7 +104,8 @@ def get_bars_tracks(bars):
 def convert_bars(bars, dest_bom):
 
 	"""
-	Convert a bars file between endians
+	Convert a bars file between endians, and return the converted
+	file
 	"""
 
 	if bars[0x8:0xA] == b"\xFF\xFE":
