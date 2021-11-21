@@ -4,7 +4,7 @@
 """bars.py: a python module to work with the BARS format"""
 
 __author__ = "Nitr4m12(based on bars_convertor.py from Peter Wunder (@SamusAranX))"
-__license__ = "WTFPL"
+__license__ = "GPL-3.0"
 
 try:
 	from utils import *
