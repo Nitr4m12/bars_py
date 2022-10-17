@@ -1,0 +1,3 @@
+[submodule "blobify"]
+	path = libs/blobify
+	url = https://github.com/neobrain/blobify
