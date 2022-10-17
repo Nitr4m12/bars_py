@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Nintendo files
+*.bars
+*.bfstm
+*.bfstp
+*.bfwav
+*.amta
