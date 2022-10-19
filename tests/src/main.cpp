@@ -2,5 +2,5 @@
 
 int main(int argc, char **argv)
 {
-  extract_amta_files("../../D_FieldBattleBgm.bars");
+  extract_amta_files("/Users/martinaguayo/Projects/bars_py/FieldBattleBgm.bars");
 }

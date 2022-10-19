@@ -1,41 +1,51 @@
-#include <filesystem>
-#include "bars/bars.h"
-#include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <stdexcept>
+
+#include <bars/bars.h>
+#include <oead/util/binary_reader.h>
 
 void extract_amta_files(const std::string& file_name)
 {
-    BARS::Header header;
-    std::ifstream ifs {file_name};
-    header.read(ifs);
-    ifs.seekg(header.file_count * 4, std::ios_base::cur);
-    BARS::TRKStruct track_struct;
-    track_struct.read(ifs, header.file_count);
+    std::vector<uint8_t> buffer(std::filesystem::file_size(file_name));
+    {
+        std::ifstream ifs {file_name, std::ios_base::binary};
+        char byte;
+        for (int i {0}; i < buffer.size(); ++i) {
+            ifs.read(&byte, sizeof(uint8_t));
+            buffer[i] = byte;
+        }
+    }
 
-    for (int i {0}; i<header.file_count; ++i) {
-        ifs.seekg(track_struct.offsets[i*2]);
 
-        BARS::AmtaHeader amta;
-        amta.read(ifs);
+    oead::util::BinaryReader reader {buffer, oead::util::Endianness::Little};
+    auto header {reader.Read<BARS::Header>(0)};
+    std::cout << "Loading..." << '\n';
+    if (header->signature != std::array<uint8_t, 4>{'B', 'A', 'R', 'S'}) throw std::runtime_error("Invalid header");
+    reader.Seek(header->file_count * 4);
+
+    std::vector<uint32_t> offsets(header->file_count);
+    for (int i {0}; i<offsets.size(); ++i)
+        offsets[i] = *reader.Read<uint32_t>();
+
+
+    for (int i {0}; i<header->file_count; ++i) {
+        auto amta {reader.Read<BARS::AmtaHeader>(offsets[i*2])};
 
         for (int j {0}; j<4; ++j) {
-            BARS::BlkHeader sub;
-            sub.read(ifs);
+            auto sub {reader.Read<BARS::BlkHeader>()};
 
-            if (sub.magic[0] != 'S')
-                ifs.seekg(sub.section_size, std::ios_base::cur);
+            if (sub->signature[0] != 'S')
+                reader.Seek(reader.Tell() + sub->section_size);
             else {
-                std::string name;
-                size_t size {sub.section_size};
-                name.resize(size);
-                ifs.read(&name[0], size);
-                name.pop_back();
+                size_t size {sub->section_size};
+                auto name = reader.ReadString(reader.Tell(), sub->section_size);
                 std::ofstream test {name + ".amta"};
                 uint8_t data;
-                ifs.seekg(track_struct.offsets[i*2]);
-                for (int i {0}; i<amta.size; ++i){
-                    ifs.read((char*)& data, sizeof(data));
-                    test.write((char*)& data, sizeof(data));
+                reader.Seek(offsets[i*2]);
+                for (int i {0}; i<amta->size; ++i){
+                    auto data = reader.Read<char>();
+                    test.write((char*) &data, sizeof(*data));
                 }
             }
         }

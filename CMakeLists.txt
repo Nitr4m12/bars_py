@@ -3,32 +3,15 @@
 cmake_minimum_required(VERSION 3.10)
 project(libbars VERSION 1.0.0 LANGUAGES CXX)
 
-list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
-find_package(blobify QUIET)
+set(ABSL_PROPAGATE_CXX_STD ON)
 
-if(NOT blobify_FOUND)
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/blobify-CMakeLists.txt.in
-        ${CMAKE_BINARY_DIR}/blobify-download/CMakeLists.txt)
-    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/blobify-download)
-    if(result)
-        message(FATAL_ERROR "CMake step for blobify failed: ${result}")
-    endif()
-
-    execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/blobify-download)
-    if(result)
-        message(FATAL_ERROR "Build step for blobify failed: ${result}")
-    endif()
-
-    add_subdirectory(${CMAKE_BINARY_DIR}/blobify-src
-        ${CMAKE_BINARY_DIR}/blobify-build
-        EXCLUDE_FROM_ALL)
-
-endif()
+include(FetchContent)
+FetchContent_Declare(
+    oead
+    GIT_REPOSITORY https://github.com/zeldamods/oead.git
+)
+FetchContent_MakeAvailable(oead)
 
 add_library(bars
     src/bars.cpp
@@ -40,10 +23,8 @@ target_include_directories(bars
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_link_libraries(bars 
-    PUBLIC
-        blobify
-)
+target_link_libraries(bars oead)
+target_compile_features(bars PUBLIC cxx_std_17)
 
 enable_testing()
 add_subdirectory(tests)
