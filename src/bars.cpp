@@ -17,6 +17,29 @@ std::map<std::string, int> NSound::reference_types
     {"WaveData",    0x7001}
 };
 namespace NSound {
+AudioHeader load_audio_header(oead::util::BinaryReader& reader)
+{
+    AudioHeader header;
+    header.signature = *reader.Read<std::array<uint8_t, 4>>();
+    header.bom = *reader.Read<uint16_t>();
+    header.head_size = *reader.Read<uint16_t>();
+    header.version = *reader.Read<uint32_t>();
+    header.file_size = *reader.Read<uint32_t>();
+    header.block_count = *reader.Read<uint16_t>();
+    header.reserved = *reader.Read<uint16_t>();
+
+    if (header.signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
+        header.block_refs.resize(header.block_count-1);
+    }
+    else
+        header.block_refs.resize(header.block_count);
+    
+    for (auto &block_ref : header.block_refs)
+        block_ref = *reader.Read<NSound::SizedReference>();
+
+    return header;
+}
+
 namespace Bars {
 
 Header load_header(oead::util::BinaryReader& reader)
@@ -42,28 +65,6 @@ Header load_header(oead::util::BinaryReader& reader)
     return header;
 }
 
-AudioHeader load_audio_header(oead::util::BinaryReader& reader)
-{
-    AudioHeader header;
-    header.signature = *reader.Read<std::array<uint8_t, 4>>();
-    header.bom = *reader.Read<uint16_t>();
-    header.head_size = *reader.Read<uint16_t>();
-    header.version = *reader.Read<uint32_t>();
-    header.file_size = *reader.Read<uint32_t>();
-    header.block_count = *reader.Read<uint16_t>();
-    header.reserved = *reader.Read<uint16_t>();
-
-    if (header.signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
-        header.block_refs.resize(header.block_count-1);
-    }
-    else
-        header.block_refs.resize(header.block_count);
-    
-    for (auto &block_ref : header.block_refs)
-        block_ref = *reader.Read<NSound::SizedReference>();
-
-    return header;
-}
 } // namespace Bars
 
 Parser::Parser(std::string file_name)
@@ -77,11 +78,12 @@ Parser::Parser(std::string file_name)
 
 void Parser::load()
 {
-    Bars::Header header;
+    Bars::Header header {Bars::load_header(reader)};
+    std::vector<Amta::Header> amta_array;
     for (const auto &entry : header.file_entries) {
         Amta::Header amta {*reader.Read<Amta::Header>(entry.amta_offset)};
         reader.Seek(entry.asset_offset);
-        Bars::AudioHeader audio_file;
+        AudioHeader audio_file {load_audio_header(reader)};
     }
 }
 } // namespace NSound
