@@ -3,6 +3,9 @@
 #include <stdexcept>
 
 #include <bars/bars.h>
+#include <bars/amta.h>
+#include <bars/fstp.h>
+#include <bars/fwav.h>
 
 std::map<std::string, int> NSound::reference_types
 {
@@ -13,8 +16,57 @@ std::map<std::string, int> NSound::reference_types
     {"WaveInfo",    0x7000},
     {"WaveData",    0x7001}
 };
+namespace NSound {
+namespace Bars {
 
-NSound::Parser::Parser(std::string file_name)
+Header load_header(oead::util::BinaryReader& reader)
+{
+    Header header;
+    header.signature = *reader.Read<std::array<uint8_t, 4>>();
+    header.file_size = *reader.Read<uint32_t>();
+    header.bom = *reader.Read<uint16_t>();
+    header.version = *reader.Read<uint16_t>();
+    header.asset_count = *reader.Read<uint32_t>();
+
+    header.crc32hashes.resize(header.asset_count);
+    header.file_entries.resize(header.asset_count);
+
+    for (auto &hash : header.crc32hashes)
+        hash = *reader.Read<uint32_t>();
+    
+    for (auto &entry : header.file_entries) {
+        entry.amta_offset = {*reader.Read<uint32_t>()};
+        entry.asset_offset = {*reader.Read<uint32_t>()};
+    }
+
+    return header;
+}
+
+AudioHeader load_audio_header(oead::util::BinaryReader& reader)
+{
+    AudioHeader header;
+    header.signature = *reader.Read<std::array<uint8_t, 4>>();
+    header.bom = *reader.Read<uint16_t>();
+    header.head_size = *reader.Read<uint16_t>();
+    header.version = *reader.Read<uint32_t>();
+    header.file_size = *reader.Read<uint32_t>();
+    header.block_count = *reader.Read<uint16_t>();
+    header.reserved = *reader.Read<uint16_t>();
+
+    if (header.signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
+        header.block_refs.resize(header.block_count-1);
+    }
+    else
+        header.block_refs.resize(header.block_count);
+    
+    for (auto &block_ref : header.block_refs)
+        block_ref = *reader.Read<NSound::SizedReference>();
+
+    return header;
+}
+} // namespace Bars
+
+Parser::Parser(std::string file_name)
 {
     buffer.resize(std::filesystem::file_size(file_name));
     std::ifstream ifs {file_name};
@@ -23,53 +75,13 @@ NSound::Parser::Parser(std::string file_name)
     reader = {buffer, oead::util::Endianness::Little};
 }
 
-NSound::Bars::Header::Header(oead::util::BinaryReader& reader)
+void Parser::load()
 {
-    signature = *reader.Read<std::array<uint8_t, 4>>();
-    file_size = *reader.Read<uint32_t>();
-    bom = *reader.Read<uint16_t>();
-    version = *reader.Read<uint16_t>();
-    asset_count = *reader.Read<uint32_t>();
-
-    crc32hashes.resize(asset_count);
-    file_entries.resize(asset_count);
-
-    for (auto &hash : crc32hashes)
-        hash = *reader.Read<uint32_t>();
-    
-    for (auto &entry : file_entries) {
-        entry.amta_offset = {*reader.Read<uint32_t>()};
-        entry.asset_offset = {*reader.Read<uint32_t>()};
+    Bars::Header header;
+    for (const auto &entry : header.file_entries) {
+        Amta::Header amta {*reader.Read<Amta::Header>(entry.amta_offset)};
+        reader.Seek(entry.asset_offset);
+        Bars::AudioHeader audio_file;
     }
 }
-
-NSound::Bars::AudioHeader::AudioHeader(oead::util::BinaryReader& reader)
-{
-    signature = *reader.Read<std::array<uint8_t, 4>>();
-    bom = *reader.Read<uint16_t>();
-    head_size = *reader.Read<uint16_t>();
-    version = *reader.Read<uint32_t>();
-    file_size = *reader.Read<uint32_t>();
-    block_count = *reader.Read<uint16_t>();
-    reserved = *reader.Read<uint16_t>();
-
-    if (signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
-        block_refs.resize(block_count-1);
-    }
-    else
-        block_refs.resize(block_count);
-    
-    for (auto &block_ref : block_refs) {
-        block_ref.ref = *reader.Read<NSound::Reference>();
-        block_ref.size = *reader.Read<uint32_t>();
-    }
-}
-
-void NSound::Parser::load()
-{
-    Bars::Header header{reader};
-    for (auto &entry : header.file_entries) {
-        Amta::Header amta {reader};
-        Bars::AudioHeader audio_file {reader};
-    }
-}
+} // namespace NSound

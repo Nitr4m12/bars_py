@@ -1,5 +1,9 @@
 #include <array>
+#include <cstdint>
 #include <vector>
+
+#ifndef NSOUND_COMMON_H
+#define NSOUND_COMMON_H
 
 namespace NSound {
 struct BlockHeader {
@@ -13,8 +17,7 @@ struct Reference {
   int32_t offset;
 };
 
-struct SizedReference {
-  Reference ref;
+struct SizedReference : Reference {
   uint32_t size;
 };
 
@@ -23,3 +26,5 @@ struct ReferenceTable {
   std::vector<Reference> refs;
 };
 }
+
+#endif

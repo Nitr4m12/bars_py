@@ -1,6 +1,5 @@
 #include <array>
-#include <filesystem>
-#include <fstream>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
@@ -36,94 +35,17 @@
     |           +---- uint32_t amta_offset
     |           +---- uint32_t asset_offset
     +------ AmtaArray
+    |
+    +------ Prefetch and Wave Array
 
 
 
 */
+#ifndef NSOUND_BARS_H
+#define NSOUND_BARS_H
 
 namespace NSound {
 extern std::map<std::string, int> reference_types;
-
-namespace Amta {
-struct Data {
-  enum Type : uint8_t { Wave = 0, Stream };
-
-  BlockHeader header;
-
-  // can be 0, but still have an entry in the string table
-  uint32_t asset_name_offset;
-
-  uint32_t sample_count;
-  Type type;  // 0=Wave, 1=Stream
-  uint8_t wave_channels;
-  uint8_t used_stream_tracks;  // Up to 8
-  uint8_t flags;
-  float volume;
-  uint32_t sample_rate;
-  uint32_t loop_start_sample;
-  uint32_t loop_end_sample;
-  float loudness;
-
-  struct StreamTrack {
-    uint32_t channel_count;
-    float volume;
-  };
-  std::array<StreamTrack, 8> stream_tracks;
-
-  float amplitude_peak;  // Only in Version 4.0!!!!!
-};
-
-struct Marker {
-  BlockHeader header;
-  uint32_t entry_count;
-
-  struct MarkerInfo {
-    uint32_t id;
-
-    // can be 0, but still have an entry in the string table
-    uint32_t asset_name_offset;
-
-    uint32_t start_pos;
-    uint32_t length;
-  };
-  std::vector<MarkerInfo> marker_infos;  // size = this.entry_count
-
-  Marker(oead::util::BinaryReader reader);
-};
-
-struct Ext_ {
-  BlockHeader header;
-  uint32_t entry_count;
-
-  struct ExtEntry {
-    uint32_t unknown[2];
-  };
-  std::vector<ExtEntry> ext_entries;  // size = this.entry_count
-
-  Ext_(oead::util::BinaryReader reader);
-};
-
-struct StringTable {
-  BlockHeader header;
-  std::string asset_name;
-
-  StringTable(oead::util::BinaryReader reader);
-};
-
-struct Header {
-  std::array<uint8_t, 4> signature;
-
-  uint16_t bom;
-  uint16_t version;  // 0x100, 0x300 or 0x400
-  uint32_t file_size;
-  uint32_t data_offset;
-  uint32_t marker_offset;
-  uint32_t ext__offset;
-  uint32_t string_table_offset;
-
-  Header(oead::util::BinaryReader reader);
-};
-}  // Namespace Amta
 
 namespace Bars {
 struct TrackInfo {
@@ -189,8 +111,6 @@ struct StreamInfo {
   uint32_t sisc;
   RegionInfo region_info;  // Used only if region_count > 0, else omitted
   uint32_t crc32hash;      // Used to check that the revision of a prefetch and stream files match
-
-  StreamInfo(oead::util::BinaryReader reader);
 };
 
 struct WaveInfo {
@@ -206,7 +126,6 @@ struct WaveInfo {
 struct DataBlock {
   BlockHeader header;
   std::vector<uint16_t> data;
-  DataBlock(oead::util::BinaryReader reader);
 };
 
 struct PrefetchData {
@@ -220,8 +139,6 @@ struct PrefetchDataBlock {
   BlockHeader header;
   ReferenceTable prefetch_data;
   std::vector<uint16_t> data;
-  
-  PrefetchDataBlock(oead::util::BinaryReader reader);
 };
 
 struct PrefetchHeader {
@@ -239,9 +156,9 @@ struct AudioHeader {
   uint16_t reserved;
   // Size = this.block_count
   std::vector<SizedReference> block_refs;
-
-  AudioHeader(oead::util::BinaryReader& reader);
 };
+
+AudioHeader load_audio_header(oead::util::BinaryReader& reader);
 
 struct Header {
   std::array<uint8_t, 4> signature;
@@ -258,9 +175,9 @@ struct Header {
     uint32_t asset_offset;
   };
   std::vector<FileEntry> file_entries;  // size = this.asset_count; same order as the CRC32 hashes
-
-  Header(oead::util::BinaryReader& reader);
 };
+
+Header load_header(oead::util::BinaryReader& reader);
 
 }  // namespace Bars
 
@@ -275,9 +192,4 @@ private:
 
 };  // namespace NSound
 
-// --------- Helper Functions --------------------------------------------------
-
-NSound::Bars::Header get_main_header(const std::string& file_name);
-void extract_amta(const NSound::Bars::Header header, oead::util::BinaryReader reader);
-
-// -----------------------------------------------------------------------------
+#endif
