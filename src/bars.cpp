@@ -4,50 +4,72 @@
 
 #include <bars/bars.h>
 
-NSound::Header get_main_header(const std::string& file_name)
+std::map<std::string, int> NSound::reference_types
 {
-    std::vector<uint8_t> buffer(std::filesystem::file_size(file_name));
-    {
-        std::ifstream ifs {file_name, std::ios_base::binary};
-        ifs.read((char*)buffer.data(), buffer.size());
-    }
+    {"StreamInfo",  0x4000},
+    {"Seek",        0x4001},
+    {"StreamData",  0x4002},
+    {"Region",      0x4003},
+    {"WaveInfo",    0x7000},
+    {"WaveData",    0x7001}
+};
 
-    oead::util::BinaryReader reader {buffer, oead::util::Endianness::Little};
-    auto header {*reader.Read<NSound::Header>(0)};
-    if (header.signature != std::array<uint8_t, 4>{'B', 'A', 'R', 'S'}) throw std::runtime_error("Invalid header");
-    return header;
+NSound::Parser::Parser(std::string file_name)
+{
+    buffer.resize(std::filesystem::file_size(file_name));
+    std::ifstream ifs {file_name};
+    ifs.read((char*)buffer.data(), buffer.size());
+
+    reader = {buffer, oead::util::Endianness::Little};
 }
 
-void extract_amta(const NSound::Header header, oead::util::BinaryReader reader)
+NSound::Bars::Header::Header(oead::util::BinaryReader& reader)
 {
+    signature = *reader.Read<std::array<uint8_t, 4>>();
+    file_size = *reader.Read<uint32_t>();
+    bom = *reader.Read<uint16_t>();
+    version = *reader.Read<uint16_t>();
+    asset_count = *reader.Read<uint32_t>();
 
-    reader.Seek(header.asset_count * 4);
+    crc32hashes.resize(asset_count);
+    file_entries.resize(asset_count);
 
-    std::vector<uint32_t> offsets(header.asset_count);
-    for (int i {0}; i<offsets.size(); ++i)
-        offsets[i] = *reader.Read<uint32_t>();
+    for (auto &hash : crc32hashes)
+        hash = *reader.Read<uint32_t>();
+    
+    for (auto &entry : file_entries) {
+        entry.amta_offset = {*reader.Read<uint32_t>()};
+        entry.asset_offset = {*reader.Read<uint32_t>()};
+    }
+}
 
+NSound::Bars::AudioHeader::AudioHeader(oead::util::BinaryReader& reader)
+{
+    signature = *reader.Read<std::array<uint8_t, 4>>();
+    bom = *reader.Read<uint16_t>();
+    head_size = *reader.Read<uint16_t>();
+    version = *reader.Read<uint32_t>();
+    file_size = *reader.Read<uint32_t>();
+    block_count = *reader.Read<uint16_t>();
+    reserved = *reader.Read<uint16_t>();
 
-    for (int i {0}; i<header.asset_count; ++i) {
-        auto amta {*reader.Read<NSound::AmtaHeader>(offsets[i*2])};
+    if (signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
+        block_refs.resize(block_count-1);
+    }
+    else
+        block_refs.resize(block_count);
+    
+    for (auto &block_ref : block_refs) {
+        block_ref.ref = *reader.Read<NSound::Reference>();
+        block_ref.size = *reader.Read<uint32_t>();
+    }
+}
 
-        for (int j {0}; j<4; ++j) {
-            auto sub {*reader.Read<NSound::BlockHeader>()};
-
-            if (sub.signature[0] != 'S')
-                reader.Seek(reader.Tell() + sub.section_size);
-            else {
-                size_t size {sub.section_size};
-                auto name = reader.ReadString(reader.Tell(), sub.section_size);
-                std::ofstream test {name + ".amta"};
-                uint8_t data;
-                reader.Seek(offsets[i*2]);
-                for (int i {0}; i<amta.size; ++i){
-                    auto data = reader.Read<char>();
-                    test.write((char*) &data, sizeof(*data));
-                }
-            }
-        }
-
+void NSound::Parser::load()
+{
+    Bars::Header header{reader};
+    for (auto &entry : header.file_entries) {
+        Amta::Header amta {reader};
+        Bars::AudioHeader audio_file {reader};
     }
 }

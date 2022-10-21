@@ -2,5 +2,9 @@
 
 int main(int argc, char **argv)
 {
-  extract_amta_files("/Users/martinaguayo/Projects/bars_py/FieldBattleBgm.bars");
+  // 1. Load parser
+  NSound::Parser parser{argv[1]};
+
+  // 2. Load header
+  parser.load();
 }
