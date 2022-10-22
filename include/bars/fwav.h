@@ -39,12 +39,24 @@ struct WaveInfo {
   uint32_t loop_start;
   uint32_t loop_end;
   uint32_t og_loop_start;
-  ReferenceTable  ref_table;
+  ReferenceTable  channel_info_ref_table;
 };
 
 struct DataBlock {
-  BlockHeader header;
-  std::vector<uint16_t> data;
+    BlockHeader header;
+    union 
+    {
+        // array of samples
+        std::vector<int8_t> pcm8;
+        std::vector<int16_t> pcm16;
+        std::vector<uint8_t> bytes;
+    };
+};
+
+struct WaveFile {
+    AudioHeader header;
+    WaveInfo    info;
+    DataBlock   block;
 };
 } // namespace NSound::Fwav
 } // namespace NSound

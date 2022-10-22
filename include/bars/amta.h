@@ -81,6 +81,14 @@ struct Header {
   uint32_t ext__offset;
   uint32_t string_table_offset;
 };
+
+struct AmtaFile {
+    Header      header;
+    Data        data_section;
+    Marker      mark_section;
+    Ext_        ext__section;
+    StringTable strg_section;
+};
 }  // Namespace Amta
 } // Namespace NSound
 

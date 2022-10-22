@@ -14,11 +14,6 @@ struct TrackInfo {
     uint16_t unknown;
 };
 
-struct ImaContext {
-    uint16_t data;
-    uint16_t table_index;
-};
-
 struct RegionInfo {
     uint16_t region_size;
     uint8_t padding1[2];
@@ -31,7 +26,7 @@ struct RegionInfo {
 
 struct StreamInfo {
     uint8_t codec;
-    bool is_loop;
+    bool    is_loop;
     uint8_t channel_count;
     uint8_t region_count;
     uint32_t sample_rate;
@@ -52,19 +47,22 @@ struct StreamInfo {
 struct PrefetchData {
     uint32_t start_frame;
     uint32_t prefetch_size;
-    uint8_t reserved;
+    uint32_t reserved;
+
+    // offset is relative to the start of the PrefetchData
     Reference to_prefetch_sample;
 };
 
 struct PrefetchDataBlock {
     BlockHeader header;
-    ReferenceTable prefetch_data;
-    std::vector<uint16_t> data;
+    Table<PrefetchData> prefetch_data;
+    std::vector<uint8_t> data;
 };
 
-struct PrefetchHeader {
-    BlockHeader header;
-    ReferenceTable prefetch_refs;
+struct PrefetchFile {
+    AudioHeader header;
+    StreamInfo  info;
+    PrefetchDataBlock data;
 };
 } // namespace NSound::Fstp
 } // namespace NSound

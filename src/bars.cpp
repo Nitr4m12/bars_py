@@ -79,7 +79,6 @@ Parser::Parser(std::string file_name)
 void Parser::load()
 {
     Bars::Header header {Bars::load_header(reader)};
-    std::vector<Amta::Header> amta_array;
     for (const auto &entry : header.file_entries) {
         Amta::Header amta {*reader.Read<Amta::Header>(entry.amta_offset)};
         reader.Seek(entry.asset_offset);
