@@ -7,8 +7,6 @@
 #include <vector>
 
 #include <bars/amta.h>
-#include <bars/fstp.h>
-#include <bars/fwav.h>
 #include <bars/common.h>
 #include <oead/util/binary_reader.h>
 
@@ -64,15 +62,16 @@ struct Header {
         uint32_t asset_offset;
     };
     std::vector<FileEntry> file_entries;  // size = this.asset_count; same order as the CRC32 hashes
+
+    Header();
+    Header(oead::util::BinaryReader& reader);
 };
 
 struct BarsFile {
     Header header;
     std::vector<Amta::AmtaFile> amta_array;
-    std::vector<std::variant<Fstp::PrefetchFile, Fwav::WaveFile>> audio_files;
+    // std::vector<std::variant<Fstp::PrefetchFile, Fwav::WaveFile>> audio_files;
 };
-
-Header load_header(oead::util::BinaryReader& reader);
 
 }   // namespace NSound::Bars
 
@@ -83,6 +82,7 @@ public:
 private:
     oead::util::BinaryReader reader;
     std::vector<uint8_t> buffer;
+    Bars::BarsFile file;
 };
 
 }   // namespace NSound

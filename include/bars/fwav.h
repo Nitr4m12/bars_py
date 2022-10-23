@@ -2,44 +2,23 @@
 #include <cstdint>
 
 #include <bars/common.h>
+#include <bars/fstp.h>
 
 #ifndef NSOUND_FWAV_H
 #define NSOUND_FWAV_H
 
-namespace NSound {
-namespace Fwav {
-struct ChannelInfo {
-    Reference sample_ref;
-    Reference adpcm_info_ref;
-    uint32_t reserved;
-};
-
-struct DspContext {
-    std::array<uint16_t, 16> coefficients;
-    uint16_t predictor_scale;
-    uint16_t pre_sample;
-    uint16_t pre_sample2;
-};
-
-struct DspLoopContext {
-    uint16_t predictor_scale;
-    uint16_t loop_pre_sample;
-    uint16_t loop_pre_sample2;
-};
-
-struct DspAdpcmInfo {
-    DspContext context;
-    DspLoopContext loop_context;
-};
-
+namespace NSound::Fwav {
 struct WaveInfo {
-  uint8_t codec;
-  uint8_t loop_flag;
-  uint32_t sample_rate;
-  uint32_t loop_start;
-  uint32_t loop_end;
-  uint32_t og_loop_start;
-  ReferenceTable  channel_info_ref_table;
+    uint8_t codec;
+    uint8_t loop_flag;
+    uint32_t sample_rate;
+    uint32_t loop_start;
+    uint32_t loop_end;
+    uint32_t og_loop_start;
+    Table<Reference>  channel_info_ref_table;
+
+    WaveInfo();
+    WaveInfo(oead::util::BinaryReader& reader);
 };
 
 struct DataBlock {
@@ -57,8 +36,10 @@ struct WaveFile {
     AudioHeader header;
     WaveInfo    info;
     DataBlock   block;
+
+    WaveFile();
+    WaveFile(oead::util::BinaryReader& reader);
 };
 } // namespace NSound::Fwav
-} // namespace NSound
 
 #endif

@@ -15,6 +15,7 @@ FetchContent_MakeAvailable(oead)
 
 add_library(bars
     src/bars.cpp
+    src/amta.cpp
 )
 target_include_directories(bars
     PUBLIC

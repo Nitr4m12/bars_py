@@ -9,6 +9,7 @@
 #define NSOUND_COMMON_H
 
 namespace NSound {
+extern std::map<std::string, std::array<uint8_t, 4>> signatures;
 extern std::map<std::string, int> reference_types;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
@@ -34,11 +35,6 @@ struct SizedReference {
     uint32_t size;
 };
 
-struct ReferenceTable {
-    uint32_t count;
-    std::vector<Reference> refs;
-};
-
 struct AudioHeader {
     std::array<uint8_t, 4> signature;
     uint16_t bom;
@@ -49,9 +45,11 @@ struct AudioHeader {
     uint16_t reserved;
     // Size = this.block_count
     std::vector<SizedReference> block_refs;
+
+    AudioHeader();
+    AudioHeader(oead::util::BinaryReader& reader);
 };
 
-AudioHeader load_audio_header(oead::util::BinaryReader& reader);
 } // namespace NSound
 
 #endif

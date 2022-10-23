@@ -6,22 +6,12 @@
 #ifndef NSOUND_FSTP_H
 #define NSOUND_FSTP_H
 
-namespace NSound {
-namespace Fstp {
+namespace NSound::Fstp {
 struct TrackInfo {
     uint8_t volume;
     uint8_t pan;
-    uint16_t unknown;
-};
-
-struct RegionInfo {
-    uint16_t region_size;
-    uint8_t padding1[2];
-    uint16_t region_flag;
-    uint8_t padding2[2];
-    int32_t region_offset;
-    uint32_t og_loop_start;
-    uint32_t og_loop_end;
+    uint8_t span;
+    uint8_t flags;
 };
 
 struct StreamInfo {
@@ -40,8 +30,48 @@ struct StreamInfo {
     uint32_t last_block_padding_size;
     uint32_t seek_size;
     uint32_t sisc;
-    RegionInfo region_info;  // Used only if region_count > 0, else omitted
-    uint32_t crc32hash;      // Used to check that the revision of a prefetch and stream files match
+    Reference to_sample_data; // relative to the start of the prefetch data
+    uint16_t region_info_size;
+    uint8_t padding[2];
+    Reference region_ref;
+};
+
+struct ChannelInfo {
+    Reference adpcm_info_ref;
+};
+
+struct DspContext {
+    std::array<uint16_t, 16> coefficients;
+    uint16_t predictor_scale;
+    uint16_t pre_sample;
+    uint16_t pre_sample2;
+};
+
+struct DspLoopContext {
+    uint16_t predictor_scale;
+    uint16_t loop_pre_sample;
+    uint16_t loop_pre_sample2;
+};
+
+struct DspAdpcmInfo {
+    DspContext context;
+    DspLoopContext loop_context;
+};
+
+struct InfoBlock {
+    BlockHeader header;
+    
+    Reference stminfo_ref;
+    Reference track_info_table_ref;
+    Reference channel_info_table_ref;
+
+    StreamInfo  stream_info;
+    Table<TrackInfo> track_info_table;
+    Table<Reference> channel_info_table;
+    std::vector<DspAdpcmInfo> dsp_adpcm_info; 
+
+    InfoBlock();
+    InfoBlock(oead::util::BinaryReader& reader);
 };
 
 struct PrefetchData {
@@ -50,21 +80,28 @@ struct PrefetchData {
     uint32_t reserved;
 
     // offset is relative to the start of the PrefetchData
-    Reference to_prefetch_sample;
+    Reference to_prefetch_samples;
+
 };
 
 struct PrefetchDataBlock {
     BlockHeader header;
     Table<PrefetchData> prefetch_data;
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> sample_data;
+
+    PrefetchDataBlock();
+    PrefetchDataBlock(oead::util::BinaryReader& reader);
 };
 
 struct PrefetchFile {
     AudioHeader header;
-    StreamInfo  info;
-    PrefetchDataBlock data;
+    InfoBlock   info;
+    PrefetchDataBlock pdat;
+
+    PrefetchFile();
+    PrefetchFile(oead::util::BinaryReader& reader);
 };
+
 } // namespace NSound::Fstp
-} // namespace NSound
 
 #endif
