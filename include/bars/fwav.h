@@ -17,19 +17,16 @@ struct WaveInfo {
     uint32_t og_loop_start;
     Table<Reference>  channel_info_ref_table;
 
-    WaveInfo();
+    WaveInfo() = default;
     WaveInfo(oead::util::BinaryReader& reader);
 };
 
 struct DataBlock {
     BlockHeader header;
-    union 
-    {
-        // array of samples
-        std::vector<int8_t> pcm8;
-        std::vector<int16_t> pcm16;
-        std::vector<uint8_t> bytes;
-    };
+    std::vector<int16_t> pcm16;
+
+    DataBlock() = default;
+    DataBlock(oead::util::BinaryReader& reader);
 };
 
 struct WaveFile {
@@ -37,7 +34,7 @@ struct WaveFile {
     WaveInfo    info;
     DataBlock   block;
 
-    WaveFile();
+    WaveFile() = default;
     WaveFile(oead::util::BinaryReader& reader);
 };
 } // namespace NSound::Fwav

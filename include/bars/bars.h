@@ -1,15 +1,3 @@
-#include <array>
-#include <cstdint>
-#include <iostream>
-#include <map>
-#include <string>
-#include <variant>
-#include <vector>
-
-#include <bars/amta.h>
-#include <bars/common.h>
-#include <oead/util/binary_reader.h>
-
 /*
     sources:
     https://wiki.oatmealdome.me/Aal/BARS_(File_Format)
@@ -45,8 +33,21 @@
 #ifndef NSOUND_BARS_H
 #define NSOUND_BARS_H
 
-namespace NSound {
-namespace Bars {
+#include <array>
+#include <cstdint>
+#include <iostream>
+#include <map>
+#include <string>
+#include <variant>
+#include <vector>
+
+#include <bars/amta.h>
+#include <bars/common.h>
+#include <bars/fstp.h>
+#include <bars/fwav.h>
+#include <oead/util/binary_reader.h>
+
+namespace NSound::Bars {
 struct Header {
     std::array<uint8_t, 4> signature;
 
@@ -63,28 +64,26 @@ struct Header {
     };
     std::vector<FileEntry> file_entries;  // size = this.asset_count; same order as the CRC32 hashes
 
-    Header();
+    Header() = default;
     Header(oead::util::BinaryReader& reader);
 };
 
-struct BarsFile {
+class BarsFile {
+public:
+    struct FileWithMetadata {
+        Amta::AmtaFile  metadata;
+        std::variant<Fstp::PrefetchFile, Fwav::WaveFile> audio;
+    };
+
+    std::vector<FileWithMetadata> file_entries() { return files; }
+
+    BarsFile();
+    BarsFile(oead::util::BinaryReader& reader);
+private:
     Header header;
-    std::vector<Amta::AmtaFile> amta_array;
-    // std::vector<std::variant<Fstp::PrefetchFile, Fwav::WaveFile>> audio_files;
+    std::vector<FileWithMetadata> files;
 };
 
 }   // namespace NSound::Bars
 
-class Parser {
-public:
-    Parser(std::string file_name);
-    void load();
-private:
-    oead::util::BinaryReader reader;
-    std::vector<uint8_t> buffer;
-    Bars::BarsFile file;
-};
-
-}   // namespace NSound
-
-#endif
+#endif // NSOUND_BARS_H

@@ -1,48 +1,11 @@
 #include <fstream>
 #include <filesystem>
 #include <stdexcept>
+#include <cassert>
 
 #include <bars/bars.h>
-#include <bars/amta.h>
 
-std::map<std::string, int> NSound::reference_types
-{
-    {"StreamInfo",  0x4000},
-    {"Seek",        0x4001},
-    {"StreamData",  0x4002},
-    {"Region",      0x4003},
-    {"PrefetchData",0x4004},
-    {"WaveInfo",    0x7000},
-    {"WaveData",    0x7001}
-};
-namespace NSound {
-std::map<std::string, std::array<uint8_t, 4>> signatures
-{
-    {"Prefetch",   {'F','S','T','P'}},
-    {"Wave",       {'F','W','A','V'}}
-};
-AudioHeader::AudioHeader(oead::util::BinaryReader& reader)
-{
-    signature = *reader.Read<typeof(signature)>();
-    bom = *reader.Read<uint16_t>();
-    head_size = *reader.Read<uint16_t>();
-    version = *reader.Read<uint32_t>();
-    file_size = *reader.Read<uint32_t>();
-    block_count = *reader.Read<uint16_t>();
-    reserved = *reader.Read<uint16_t>();
-
-    if (signature == std::array<uint8_t, 4>{'F', 'S', 'T', 'P'}) {
-        block_refs.resize(block_count-1);
-    }
-    else
-        block_refs.resize(block_count);
-    
-    for (auto &block_ref : block_refs)
-        block_ref = *reader.Read<NSound::SizedReference>();
-}
-
-namespace Bars {
-
+namespace NSound::Bars {
 Header::Header(oead::util::BinaryReader& reader) 
 {
     signature = *reader.Read<typeof(signature)>();
@@ -63,6 +26,26 @@ Header::Header(oead::util::BinaryReader& reader)
     }
 }
 
-} // namespace Bars
+BarsFile::BarsFile(oead::util::BinaryReader& reader)
+    : header{reader}
+{
+    std::array<uint8_t, 4> sign {'B', 'A', 'R', 'S'};
 
-} // namespace NSound
+    // Checks
+    if (header.signature != sign) throw std::runtime_error("Invalid header");
+    if (header.bom != VALID_BOM) throw std::runtime_error("Invalid Byte-Order Mark");
+
+    files.resize(header.asset_count);
+    for (int i {0}; i<header.asset_count; ++i) {
+        reader.Seek(header.file_entries[i].amta_offset);
+        files[i].metadata = {reader};
+
+        reader.Seek(header.file_entries[i].asset_offset);
+        if (std::strcmp((char*)&reader.span()[reader.Tell()], "FSTP") == 0)
+            files[i].audio = Fstp::PrefetchFile{reader};
+        else if (std::strcmp((char*)&reader.span()[reader.Tell()], "FWAV") == 0)
+            files[i].audio = Fwav::WaveFile{reader};
+    }
+}
+
+} // namespace Bars

@@ -1,4 +1,4 @@
-# Conf based on https://github.com/pabloariasal/modern-cmake-sample
+# Conf based on https://github.com/pabloariasal/modern-cmake-sample
 
 cmake_minimum_required(VERSION 3.10)
 project(libbars VERSION 1.0.0 LANGUAGES CXX)
@@ -14,8 +14,16 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(oead)
 
 add_library(bars
+    include/bars/bars.h
+    include/bars/amta.h
+    include/bars/common.h
+    include/bars/fstp.h
+    include/bars/fwav.h
     src/bars.cpp
     src/amta.cpp
+    src/fstp.cpp
+    src/fwav.cpp
+    src/common.cpp
 )
 target_include_directories(bars
     PUBLIC

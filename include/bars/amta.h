@@ -53,7 +53,7 @@ struct Marker {
     };
     std::vector<MarkerInfo> marker_infos;  // size = this.entry_count
 
-    Marker();
+    Marker() = default;
     Marker(oead::util::BinaryReader& reader);
 };
 
@@ -66,7 +66,7 @@ struct Ext_ {
     };
     std::vector<ExtEntry> ext_entries;  // size = this.entry_count
 
-    Ext_();
+    Ext_() = default;
     Ext_(oead::util::BinaryReader& reader);
 };
 
@@ -74,7 +74,7 @@ struct StringTable {
     BlockHeader header;
     std::string asset_name;
 
-    StringTable();
+    StringTable() = default;
     StringTable(oead::util::BinaryReader& reader);
 };
 
@@ -98,10 +98,12 @@ struct AmtaFile {
     Ext_        ext_;
     StringTable strg_table;
 
-    AmtaFile();
+    AmtaFile() = default;
     AmtaFile(oead::util::BinaryReader& reader);
 };
 
-}  // Namespace Amta
+void save_file(std::ostream& os, AmtaFile& amta);
+
+}  // Namespace NSound::Amta
 
 #endif

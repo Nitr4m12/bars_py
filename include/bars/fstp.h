@@ -70,7 +70,7 @@ struct InfoBlock {
     Table<Reference> channel_info_table;
     std::vector<DspAdpcmInfo> dsp_adpcm_info; 
 
-    InfoBlock();
+    InfoBlock() = default;
     InfoBlock(oead::util::BinaryReader& reader);
 };
 
@@ -89,7 +89,7 @@ struct PrefetchDataBlock {
     Table<PrefetchData> prefetch_data;
     std::vector<uint8_t> sample_data;
 
-    PrefetchDataBlock();
+    PrefetchDataBlock() = default;
     PrefetchDataBlock(oead::util::BinaryReader& reader);
 };
 
@@ -98,7 +98,7 @@ struct PrefetchFile {
     InfoBlock   info;
     PrefetchDataBlock pdat;
 
-    PrefetchFile();
+    PrefetchFile() = default;
     PrefetchFile(oead::util::BinaryReader& reader);
 };
 

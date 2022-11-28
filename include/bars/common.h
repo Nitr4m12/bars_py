@@ -9,8 +9,8 @@
 #define NSOUND_COMMON_H
 
 namespace NSound {
+constexpr int VALID_BOM = 0xFEFF;
 extern std::map<std::string, std::array<uint8_t, 4>> signatures;
-extern std::map<std::string, int> reference_types;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
     uint32_t section_size;
@@ -46,7 +46,7 @@ struct AudioHeader {
     // Size = this.block_count
     std::vector<SizedReference> block_refs;
 
-    AudioHeader();
+    AudioHeader() = default;
     AudioHeader(oead::util::BinaryReader& reader);
 };
 

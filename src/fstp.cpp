@@ -1,13 +1,15 @@
-#include <map>
+#include <cassert>
 
-#include <bars/common.h>
 #include <bars/fstp.h>
 
 namespace NSound::Fstp {
 InfoBlock::InfoBlock(oead::util::BinaryReader& reader)
 {
     header = *reader.Read<BlockHeader>();
-    
+
+    std::array<uint8_t, 4> sign {'I', 'N', 'F', 'O'};
+    assert(header.signature == sign);
+
     size_t ref_start = reader.Tell();
 
     stminfo_ref = *reader.Read<Reference>();
@@ -57,6 +59,9 @@ PrefetchDataBlock::PrefetchDataBlock(oead::util::BinaryReader& reader)
 {
     header = *reader.Read<BlockHeader>();
 
+    std::array<uint8_t, 4> sign {'P', 'D', 'A', 'T'};
+    assert(header.signature == sign);
+
     prefetch_data.count = *reader.Read<uint32_t>();
     prefetch_data.items.resize(prefetch_data.count);
 
@@ -78,7 +83,11 @@ PrefetchDataBlock::PrefetchDataBlock(oead::util::BinaryReader& reader)
 PrefetchFile::PrefetchFile(oead::util::BinaryReader& reader)
 {
     size_t file_start = reader.Tell();
-    header = {reader};
+    header = AudioHeader{reader};
+
+    std::array<uint8_t, 4> sign{'F', 'S', 'T', 'P'};
+    assert(header.signature == sign);
+
     for (auto &ref : header.block_refs) {
         reader.Seek(file_start + ref.offset);
         if (ref.type == 0x4000)
