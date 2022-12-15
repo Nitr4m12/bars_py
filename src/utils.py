@@ -2,18 +2,7 @@
 #!/usr/bin/python3
 
 import struct
-
-class Header(struct.Struct):
-	# Bars Header
-	def __init__(self, bom):
-		super().__init__(bom + "4sI2HI")
-
-	def data(self, data, pos):
-		(self.magic,
-		 self.size_,
-		 self.endian,
-		 self.reserved,
-		 self.count) = self.unpack_from(data, pos)
+import io
 
 class AudioHeader(struct.Struct):
     def __init__(self, bom):
@@ -26,36 +15,6 @@ class AudioHeader(struct.Struct):
          self.fileSize,
          self.numBlocks,
          self.reserved) = self.unpack_from(data, pos)
-
-class TRKStruct(struct.Struct):
-	def __init__(self, bom, count):
-		super().__init__(f"{bom}{count*2}I")
-	
-	def data(self, data, pos):
-		self.offsets = self.unpack_from(data, pos)
-
-class Unknown(struct.Struct):
-	# Unknown bytes, but I'm guessing track info
-	def __init__(self, bom, count):
-		super().__init__(f'{bom}{count}I')
-
-	def data(self, data, pos):
-		self.unknown = self.unpack_from(data, pos)
-
-class AMTAHeader(struct.Struct):
-	# Amta Header
-	def __init__(self, bom):
-		super().__init__(bom + "4s2H5I")
-
-	def data(self, data, pos):
-		(self.magic,
-		 self.endian,
-		 self.reserved,
-		 self.length,
-		 self.data_offset,
-		 self.mark_offset,
-		 self.ext_offset,
-		 self.strg_offset) = self.unpack_from(data, pos)
 
 class BLKHeader(struct.Struct):
 	def __init__(self, bom):
@@ -73,16 +32,6 @@ class AMTASubHeader(struct.Struct):
 	def data(self, data, pos):
 		(self.magic,
 		 self.length) = self.unpack_from(data, pos)
-
-class FWAVHeader(struct.Struct):
-	def __init__(self, bom):
-		super().__init__(bom + "4s8xI8x2I32x")
-
-	def data(self, data, pos):
-		(self.magic,
-		 self.size_,
-		 self.info_offset,
-		 self.data_offset) = self.unpack_from(data, pos)
 
 class STMInfo(struct.Struct):  # Stream Info
     def __init__(self, bom):
@@ -138,7 +87,7 @@ class DSPContext(struct.Struct):
          self.preSample2) = self.unpack_from(data, pos)
 
 
-class IMAContext(struct.Struct): 
+class IMAContext(struct.Struct):
 	# Context table for IMA formats
     def __init__(self, bom):
         super().__init__(bom + '2H')
@@ -159,7 +108,7 @@ class Ref(struct.Struct):  # Reference
 class REGNInfo(struct.Struct):
     def __init__(self, bom):
         super().__init__(bom + 'H2xH2xi3I')
-    
+
     def data(self, data, pos):
         (self.reg_size,
          self.reg_flag,
@@ -196,12 +145,12 @@ def fix_bfstp(outputBuffer: bytearray, pos: int, dest_bom: str, sized_refs):
     pdat_len: int = int.from_bytes(outputBuffer[pdat_offset + 4:pdat_offset + 8], "little" if dest_bom == "<" else "big") - pdat_header_len // 2
     outputBuffer[pdat_offset + 0x4:pdat_offset + 0x8] = struct.pack(dest_bom + "I", pdat_len + pdat_header_len)
     outputBuffer[pdat_offset + 0x8:pdat_offset + 0xC] = b'\x00\x00\x00\x01' if dest_bom == ">" else b'\x01\x00\x00\x00'
-    outputBuffer[pdat_offset + 0x10:pdat_offset + 0x14] = struct.pack(dest_bom + "I", pdat_len) 
+    outputBuffer[pdat_offset + 0x10:pdat_offset + 0x14] = struct.pack(dest_bom + "I", pdat_len)
     # just before the data in PDAT starts - usually stands 0x14 for WiiU (or Big Endian) and 0x54 for Switch (or Little Endian)
     outputBuffer[pdat_offset + 0x1C:pdat_offset + 0x20] = struct.pack(dest_bom + "I", 0x14 if dest_bom == ">" else 0x34)
-	
+
     # since switch PDAT header is twice as big (32 vs 64), it needs to have the second half filled with zeros
-    if dest_bom == "<": 
+    if dest_bom == "<":
         for _ in range(0x20):
             outputBuffer.insert(pdat_offset + 0x20, 0)
 
