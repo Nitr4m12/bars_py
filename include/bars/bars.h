@@ -6,30 +6,6 @@
     https://github.com/NanobotZ/bfstp-fixer
 */
 
-/*
-
-    *.bars
-    |
-    |
-    +------ FileHeader
-    |      |
-    |       +-- char signature[4] // "BARS" in ASCII
-    |       +-- uint32_t file_size
-    |       +-- uint16_t byte order_mark // FEFF for Big-Endian; FFFE for Little-Endian
-    |       +-- uint16_t version
-    |       +-- uint32_t asset_count
-    |       +-- uint32_t crc32hashes[asset_count]
-    |       +-- FileEntries // one for each file
-    |           |
-    |           +---- uint32_t amta_offset
-    |           +---- uint32_t asset_offset
-    +------ AmtaArray
-    |
-    +------ Prefetch and Wave Array
-
-
-
-*/
 #ifndef NSOUND_BARS_H
 #define NSOUND_BARS_H
 
