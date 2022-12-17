@@ -95,14 +95,18 @@ struct AmtaFile {
     Header      header;
     Data        data;
     Marker      marker;
-    Ext_        ext_;
+    Ext_        ext;
     StringTable strg_table;
 
     AmtaFile() = default;
     AmtaFile(oead::util::BinaryReader& reader);
 };
 
-void save_file(std::ostream& os, AmtaFile& amta);
+void write_strg_section(oead::util::BinaryWriter& writer, StringTable& strg);
+void write_ext_section(oead::util::BinaryWriter& writer, Ext_& ext);
+void write_marker_section(oead::util::BinaryWriter& writer, Marker& mark);
+void write_data_section(oead::util::BinaryWriter& writer, Data& data, const int& version);
+std::vector<uint8_t> write(oead::util::BinaryWriter& writer, AmtaFile& amta);
 
 }  // Namespace NSound::Amta
 

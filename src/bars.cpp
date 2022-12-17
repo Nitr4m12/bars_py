@@ -6,7 +6,7 @@
 #include <bars/bars.h>
 
 namespace NSound::Bars {
-Header::Header(oead::util::BinaryReader& reader) 
+Header::Header(oead::util::BinaryReader& reader)
 {
     signature = *reader.Read<typeof(signature)>();
     file_size = *reader.Read<uint32_t>();
@@ -41,10 +41,10 @@ BarsFile::BarsFile(oead::util::BinaryReader& reader)
         files[i].metadata = {reader};
 
         reader.Seek(header.file_entries[i].asset_offset);
-        if (std::strcmp((char*)&reader.span()[reader.Tell()], "FSTP") == 0)
-            files[i].audio = Fstp::PrefetchFile{reader};
-        else if (std::strcmp((char*)&reader.span()[reader.Tell()], "FWAV") == 0)
-            files[i].audio = Fwav::WaveFile{reader};
+        // if (std::strcmp((char*)&reader.span()[reader.Tell()], "FSTP") == 0)
+        files[i].audio = Fstp::PrefetchFile(reader);
+        // if (std::strcmp((char*)&reader.span()[reader.Tell()], "FWAV") == 0)
+        //     files[i].audio = Fwav::WaveFile(reader);
     }
 }
 

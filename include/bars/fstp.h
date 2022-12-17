@@ -2,6 +2,8 @@
 #include <cstdint>
 
 #include <bars/common.h>
+#include <ostream>
+#include "oead/util/binary_reader.h"
 
 #ifndef NSOUND_FSTP_H
 #define NSOUND_FSTP_H
@@ -60,7 +62,7 @@ struct DspAdpcmInfo {
 
 struct InfoBlock {
     BlockHeader header;
-    
+
     Reference stminfo_ref;
     Reference track_info_table_ref;
     Reference channel_info_table_ref;
@@ -68,7 +70,7 @@ struct InfoBlock {
     StreamInfo  stream_info;
     Table<TrackInfo> track_info_table;
     Table<Reference> channel_info_table;
-    std::vector<DspAdpcmInfo> dsp_adpcm_info; 
+    std::vector<DspAdpcmInfo> dsp_adpcm_info_array;
 
     InfoBlock() = default;
     InfoBlock(oead::util::BinaryReader& reader);
@@ -102,6 +104,16 @@ struct PrefetchFile {
     PrefetchFile(oead::util::BinaryReader& reader);
 };
 
+void write_track_info(std::ostream& os, TrackInfo& track_info);
+void write_stream_info(std::ostream& os, StreamInfo& stm_info);
+void write_channel_info(std::ostream& os, ChannelInfo& ch_info);
+void write_dsp_context(std::ostream& os, DspContext& dsp_ctx);
+void write_dsp_lcontext(std::ostream& os, DspLoopContext& dsp_loop_ctx);
+void write_adpcm_info(std::ostream& os, DspAdpcmInfo& adpcm_info);
+void write_info_block(std::ostream& os, InfoBlock& info_blk);
+void write_prefetch_data(std::ostream& os, PrefetchData& pdat);
+void write_pdat_block(std::ostream& os, PrefetchDataBlock& pdat_blk);
+void write(std::ostream& os, PrefetchFile& fstp);
 } // namespace NSound::Fstp
 
 #endif

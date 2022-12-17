@@ -32,13 +32,15 @@ struct Header {
     uint16_t version;
     uint32_t asset_count;
 
-    std::vector<uint32_t> crc32hashes;  // size = this.asset_count; must be sorted
+    // size = this.asset_count; must be sorted
+    std::vector<uint32_t> crc32hashes;
 
     struct FileEntry {
         uint32_t amta_offset;
         uint32_t asset_offset;
     };
-    std::vector<FileEntry> file_entries;  // size = this.asset_count; same order as the CRC32 hashes
+    // size = this.asset_count; same order as the CRC32 hashes
+    std::vector<FileEntry> file_entries;
 
     Header() = default;
     Header(oead::util::BinaryReader& reader);

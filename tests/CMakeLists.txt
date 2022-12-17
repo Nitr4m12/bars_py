@@ -6,5 +6,5 @@ target_link_libraries(libbars_test PUBLIC oead)
 
 add_test(
     NAME libbars_test
-    COMMAND libbars_test ${CMAKE_CURRENT_SOURCE_DIR}/FieldBattleBgm.bars
+    COMMAND libbars_test ${CMAKE_CURRENT_SOURCE_DIR}/old.bars
 )

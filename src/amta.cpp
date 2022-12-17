@@ -1,5 +1,8 @@
+#include <array>
 #include <bars/amta.h>
 #include <bars/common.h>
+#include <cstddef>
+#include <cstdint>
 #include <oead/util/binary_reader.h>
 #include <cassert>
 
@@ -45,40 +48,115 @@ AmtaFile::AmtaFile(oead::util::BinaryReader& reader)
     size_t amta_start = reader.Tell();
     header = *reader.Read<Header>();
     assert(header.signature == signatures["AMTA"]);
-    
+
     data = *reader.Read<Data>(amta_start + header.data_offset);
-    
+
     reader.Seek(amta_start + header.marker_offset);
     marker = Marker{reader};
 
     reader.Seek(amta_start + header.ext__offset);
-    ext_ = Ext_{reader};
+    ext = Ext_{reader};
 
     reader.Seek(amta_start + header.string_table_offset);
     strg_table = StringTable{reader};
 }
 
-void save_file(std::ostream& os, AmtaFile& amta)
+void write_strg_section(oead::util::BinaryWriter& writer, StringTable& strg)
 {
-    os.write(reinterpret_cast<char*>(&amta.header), sizeof(Header));
-    os.seekp(amta.header.data_offset);
-    os.write(reinterpret_cast<char*>(&amta.data), sizeof(Data));
-    os.seekp(amta.header.marker_offset);
-    os.write(reinterpret_cast<char*>(&amta.marker.header), sizeof(BlockHeader));
-    os.write(reinterpret_cast<char*>(&amta.marker.entry_count), sizeof(uint32_t));
+    writer.Write("STRG");
+    writer.Write<uint32_t>(strg.asset_name.size() + 1);
+    writer.WriteCStr(strg.asset_name);
+}
 
-    for (auto &marker_info : amta.marker.marker_infos)
-        os.write(reinterpret_cast<char*>(&marker_info), sizeof(Marker::MarkerInfo));
+void write_ext_section(oead::util::BinaryWriter& writer, Ext_& ext)
+{
+    writer.Write("EXT_");
 
-    os.seekp(amta.header.ext__offset);
-    os.write(reinterpret_cast<char*>(&amta.ext_.header), sizeof(BlockHeader));
-    os.write(reinterpret_cast<char*>(&amta.ext_.entry_count), sizeof(uint32_t));
+    size_t ext_size {0};
+    if (ext.entry_count > 0)
+        ext_size = sizeof(BlockHeader) + sizeof(Ext_::entry_count) + (sizeof(Ext_::ExtEntry) * ext.ext_entries.size());
 
-    for (auto &ext_entries : amta.ext_.ext_entries)
-        os.write(reinterpret_cast<char*>(&ext_entries), sizeof(Ext_::ExtEntry));
+    writer.Write(ext_size);
 
-    os.seekp(amta.header.string_table_offset);
-    os.write(reinterpret_cast<char*>(&amta.strg_table.header), sizeof(BlockHeader));
-    os.write(amta.strg_table.asset_name.c_str(), amta.strg_table.header.section_size);
+    for (auto& ext_entry : ext.ext_entries)
+        writer.Write<Ext_::ExtEntry>(ext_entry);
+}
+
+void write_marker_section(oead::util::BinaryWriter& writer, Marker& mark)
+{
+    writer.Write("MARK");
+
+    size_t mark_size {0};
+    if (mark.entry_count > 0)
+        mark_size = sizeof(BlockHeader) + sizeof(Marker::entry_count) + (sizeof(Marker::MarkerInfo) * mark.marker_infos.size());
+
+    writer.Write<uint32_t>(mark_size);
+
+    for (auto& marker_info : mark.marker_infos)
+        writer.Write<Marker::MarkerInfo>(marker_info);
+}
+
+void write_data_section(oead::util::BinaryWriter& writer, Data& data, const int& version)
+{
+    writer.Write("DATA");
+    writer.Write(sizeof(Data));
+    writer.Write<uint32_t>(data.asset_name_offset);
+    writer.Write<uint32_t>(data.sample_count);
+    writer.Write<Data::Type>(data.type);
+    writer.Write<uint8_t>(data.wave_channels);
+    writer.Write<uint8_t>(data.used_stream_tracks);
+    writer.Write<uint8_t>(data.flags);
+    writer.Write<float>(data.volume);
+    writer.Write<uint32_t>(data.sample_rate);
+    writer.Write<uint32_t>(data.loop_start_sample);
+    writer.Write<uint32_t>(data.loop_end_sample);
+    writer.Write<float>(data.loudness);
+
+    for (auto& stream_track : data.stream_tracks)
+        writer.Write<Data::StreamTrack>(stream_track);
+
+    if (version >= 4)
+        writer.Write<float>(data.amplitude_peak);
+}
+
+std::vector<uint8_t> write(oead::util::BinaryWriter& writer, AmtaFile& amta)
+{
+    //os.write(reinterpret_cast<char*>(&amta.header), sizeof(Header));
+    // os.write("AMTA", 4);
+    // os.write(reinterpret_cast<char*>(), 2);
+    // os.seekp(amta.header.data_offset);
+    // os.write(reinterpret_cast<char*>(&amta.data), sizeof(Data));
+    // os.seekp(amta.header.marker_offset);
+    // os.write(reinterpret_cast<char*>(&amta.marker.header), sizeof(BlockHeader));
+    // os.write(reinterpret_cast<char*>(&amta.marker.entry_count), sizeof(uint32_t));
+
+    // for (auto &marker_info : amta.marker.marker_infos)
+    //     os.write(reinterpret_cast<char*>(&marker_info), sizeof(Marker::MarkerInfo));
+
+    // os.seekp(amta.header.ext__offset);
+    // os.write(reinterpret_cast<char*>(&amta.ext_.header), sizeof(BlockHeader));
+    // os.write(reinterpret_cast<char*>(&amta.ext_.entry_count), sizeof(uint32_t));
+
+    // for (auto &ext_entries : amta.ext_.ext_entries)
+    //     os.write(reinterpret_cast<char*>(&ext_entries), sizeof(Ext_::ExtEntry));
+
+    // os.seekp(amta.header.string_table_offset);
+    // os.write(reinterpret_cast<char*>(&amta.strg_table.header), sizeof(BlockHeader));
+    // os.write(amta.strg_table.asset_name.c_str(), amta.strg_table.header.section_size);
+    size_t file_start = writer.Tell();
+
+    writer.Write("AMTA");
+    writer.Write<uint16_t>(0xFEFF);
+    writer.Write<uint16_t>(amta.header.version);
+    // file_size and offsets are set once we have written all
+    writer.Seek(file_start + sizeof(Header));
+
+    write_data_section(writer, amta.data, amta.header.version);
+    write_marker_section(writer, amta.marker);
+    write_ext_section(writer, amta.ext);
+    write_strg_section(writer, amta.strg_table);
+
+    writer.AlignUp(0x20);
+    return writer.Finalize();
 }
 } // namespace NSound::Amta

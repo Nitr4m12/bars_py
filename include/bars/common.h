@@ -50,6 +50,10 @@ struct AudioHeader {
     AudioHeader(oead::util::BinaryReader& reader);
 };
 
+void write_reference(std::ostream& os, Reference& ref);
+void write_sized_reference(std::ostream& os, SizedReference& sref);
+void write_audio_header(std::ostream& os, AudioHeader& header);
+
 } // namespace NSound
 
 #endif

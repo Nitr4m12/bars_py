@@ -1,4 +1,7 @@
+#include <cstdint>
+#include <cstdio>
 #include <string>
+#include <iostream>
 
 #include <bars/common.h>
 
@@ -42,9 +45,38 @@ AudioHeader::AudioHeader(oead::util::BinaryReader& reader)
     }
     else
         block_refs.resize(block_count);
-    
+
     for (auto &block_ref : block_refs)
         block_ref = *reader.Read<NSound::SizedReference>();
+}
+
+void write_reference(std::ostream& os, Reference& ref)
+{
+    os.write(reinterpret_cast<char*>(&ref.type), sizeof(uint16_t));
+    os.seekp(2, std::ios_base::cur);
+    os.write(reinterpret_cast<char*>(&ref.offset), sizeof(int32_t));
+}
+
+void write_sized_reference(std::ostream& os, SizedReference& sref)
+{
+    os.write(reinterpret_cast<char*>(&sref.type), sizeof(uint16_t));
+    os.seekp(2, std::ios_base::cur);
+    os.write(reinterpret_cast<char*>(&sref.offset), sizeof(int32_t));
+    os.write(reinterpret_cast<char*>(&sref.size), sizeof(uint32_t));
+}
+
+void write_audio_header(std::ostream& os, AudioHeader& header)
+{
+    os.write(reinterpret_cast<char*>(&header.signature), 4);
+    os.write(reinterpret_cast<char*>(&header.bom), sizeof(uint16_t));
+    os.write(reinterpret_cast<char*>(&header.head_size), sizeof(uint16_t));
+    os.write(reinterpret_cast<char*>(&header.version), sizeof(uint32_t));
+    os.write(reinterpret_cast<char*>(&header.file_size), sizeof(uint32_t));
+    os.write(reinterpret_cast<char*>(&header.block_count), sizeof(uint16_t));
+    os.write(reinterpret_cast<char*>(&header.reserved), sizeof(uint16_t));
+
+    for (auto& block_ref : header.block_refs)
+        write_sized_reference(os, block_ref);
 }
 
 }
