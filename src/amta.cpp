@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <oead/util/binary_reader.h>
 #include <cassert>
+#include "oead/util/swap.h"
 
 namespace NSound::Amta {
 Marker::Marker(oead::util::BinaryReader& reader)
@@ -119,30 +120,9 @@ void write_data_section(oead::util::BinaryWriter& writer, Data& data, const int&
         writer.Write<float>(data.amplitude_peak);
 }
 
-std::vector<uint8_t> write(oead::util::BinaryWriter& writer, AmtaFile& amta)
+std::vector<uint8_t> write(AmtaFile& amta)
 {
-    //os.write(reinterpret_cast<char*>(&amta.header), sizeof(Header));
-    // os.write("AMTA", 4);
-    // os.write(reinterpret_cast<char*>(), 2);
-    // os.seekp(amta.header.data_offset);
-    // os.write(reinterpret_cast<char*>(&amta.data), sizeof(Data));
-    // os.seekp(amta.header.marker_offset);
-    // os.write(reinterpret_cast<char*>(&amta.marker.header), sizeof(BlockHeader));
-    // os.write(reinterpret_cast<char*>(&amta.marker.entry_count), sizeof(uint32_t));
-
-    // for (auto &marker_info : amta.marker.marker_infos)
-    //     os.write(reinterpret_cast<char*>(&marker_info), sizeof(Marker::MarkerInfo));
-
-    // os.seekp(amta.header.ext__offset);
-    // os.write(reinterpret_cast<char*>(&amta.ext_.header), sizeof(BlockHeader));
-    // os.write(reinterpret_cast<char*>(&amta.ext_.entry_count), sizeof(uint32_t));
-
-    // for (auto &ext_entries : amta.ext_.ext_entries)
-    //     os.write(reinterpret_cast<char*>(&ext_entries), sizeof(Ext_::ExtEntry));
-
-    // os.seekp(amta.header.string_table_offset);
-    // os.write(reinterpret_cast<char*>(&amta.strg_table.header), sizeof(BlockHeader));
-    // os.write(amta.strg_table.asset_name.c_str(), amta.strg_table.header.section_size);
+    oead::util::BinaryWriter writer{oead::util::Endianness::Little};
     size_t file_start = writer.Tell();
 
     writer.Write("AMTA");

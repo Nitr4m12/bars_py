@@ -106,7 +106,7 @@ void write_strg_section(oead::util::BinaryWriter& writer, StringTable& strg);
 void write_ext_section(oead::util::BinaryWriter& writer, Ext_& ext);
 void write_marker_section(oead::util::BinaryWriter& writer, Marker& mark);
 void write_data_section(oead::util::BinaryWriter& writer, Data& data, const int& version);
-std::vector<uint8_t> write(oead::util::BinaryWriter& writer, AmtaFile& amta);
+std::vector<uint8_t> write(AmtaFile& amta);
 
 }  // Namespace NSound::Amta
 

@@ -50,9 +50,21 @@ struct AudioHeader {
     AudioHeader(oead::util::BinaryReader& reader);
 };
 
-void write_reference(std::ostream& os, Reference& ref);
-void write_sized_reference(std::ostream& os, SizedReference& sref);
-void write_audio_header(std::ostream& os, AudioHeader& header);
+template<typename T>
+Table<T> read_table(oead::util::BinaryReader& reader)
+{
+    Table<T> tbl;
+    tbl.count = *reader.Read<uint32_t>();
+    tbl.items.resize(tbl.count);
+    for (auto& item : tbl.items)
+        item = *reader.Read<T>();
+
+    return tbl;
+}
+
+void write_reference(oead::util::BinaryWriter& writer, Reference& ref);
+void write_sized_reference(oead::util::BinaryWriter& writer, SizedReference& sref);
+void write_audio_header(oead::util::BinaryWriter& writer, AudioHeader& header);
 
 } // namespace NSound
 
