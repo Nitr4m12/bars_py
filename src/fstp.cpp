@@ -31,7 +31,7 @@ PrefetchDataBlock read_pdat_block(oead::util::BinaryReader& reader)
     // that to the offset of the current entry in the table
     PrefetchData current_item {pdat_block.prefetch_data.items[0]};
 
-    size_t offset {table_start + sizeof(uint32_t) + sizeof(PrefetchData) + current_item.to_prefetch_samples.offset};
+    size_t offset {table_start + sizeof(uint32_t) + current_item.to_prefetch_samples.offset};
     reader.Seek(offset);
 
     pdat_block.sample_data.resize(current_item.prefetch_size);
