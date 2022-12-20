@@ -197,6 +197,8 @@ void write_info_block(oead::util::BinaryWriter& writer, InfoBlock& info_blk)
     }
     for (auto& entry : info_blk.dsp_adpcm_info_array) {
         write_adpcm_info(writer, entry);
+        // padding?
+        writer.Write<uint16_t>(0x0);
     }
 }
 
@@ -218,6 +220,8 @@ void write_pdat_block(oead::util::BinaryWriter& writer, PrefetchDataBlock& pdat_
     size_t prefetch_data_start = writer.Tell();
     for (auto& item : pdat_blk.prefetch_data.items)
         write_prefetch_data(writer, item);
+
+    writer.AlignUp(0x40);
 
     for (auto& sample : pdat_blk.sample_data)
         writer.Write<uint8_t>(sample);
