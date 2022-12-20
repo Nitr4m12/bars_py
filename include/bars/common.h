@@ -1,6 +1,7 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 #include <oead/util/binary_reader.h>
