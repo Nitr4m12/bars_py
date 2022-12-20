@@ -183,6 +183,8 @@ void write_info_block(oead::util::BinaryWriter& writer, InfoBlock& info_blk)
     for (auto& track_info : info_blk.track_info_table.items)
         write_track_info(writer, track_info);
 
+    // Possibly another value?
+    writer.Write<uint32_t>(info_blk.stream_info.sample_count);
     writer.Write<uint32_t>(info_blk.channel_info_table.count);
     for (auto& channel_info : info_blk.channel_info_table.items)
         write_reference(writer, channel_info);
