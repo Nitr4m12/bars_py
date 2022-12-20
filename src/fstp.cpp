@@ -189,7 +189,12 @@ void write_info_block(oead::util::BinaryWriter& writer, InfoBlock& info_blk)
     for (auto& channel_info : info_blk.channel_info_table.items)
         write_reference(writer, channel_info);
 
-    // TODO: Write array of references to each dsp_adpcm_info entry
+    size_t array_end {writer.Tell() - writer.Tell() + sizeof(Reference)*info_blk.dsp_adpcm_info_array.size()};
+    for (int i {0}; i<info_blk.dsp_adpcm_info_array.size(); ++i) {
+        size_t into_array {i*sizeof(Reference)};
+        // Add 2 to the size. Maybe padding?
+        writer.Write(Reference{0x300, {0, 0}, static_cast<int32_t>((sizeof(DspAdpcmInfo)+2)*i+array_end-into_array)});
+    }
     for (auto& entry : info_blk.dsp_adpcm_info_array) {
         write_adpcm_info(writer, entry);
     }
