@@ -82,6 +82,22 @@ private:
     oead::util::BinaryReader reader;
 };
 
+class AudioWriter {
+public:
+    AudioWriter() = default;
+    AudioWriter(oead::util::Endianness endian)
+        :writer{endian} {}
+
+    template<typename T>
+    void write(T data) { writer.Write<T>(data); }
+
+    void align_up(size_t n) { writer.AlignUp(n); }
+
+    std::vector<uint8_t> finalize() { return writer.Finalize(); }
+private:
+    oead::util::BinaryWriter writer {oead::util::Endianness::Little};
+};
+
 template<typename T>
 Table<T> read_table(oead::util::BinaryReader& reader)
 {
