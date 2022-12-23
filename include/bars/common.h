@@ -51,6 +51,32 @@ struct AudioHeader {
     AudioHeader(oead::util::BinaryReader& reader);
 };
 
+class AudioReader {
+public:
+    template <typename T>
+    T read() { return *reader.Read<T>(); }
+
+    template <typename T>
+    T read_at(size_t offset) { return *reader.Read<T>(offset); }
+
+    template<typename T>
+    Table<T> read_table()
+    {
+        Table<T> tbl;
+        tbl.count = *reader.Read<uint32_t>();
+        tbl.items.resize(tbl.count);
+        for (auto& item : tbl.items)
+            item = *reader.Read<T>();
+
+        return tbl;
+    }
+
+    void seek(size_t offset) { reader.Seek(offset); }
+
+private:
+    oead::util::BinaryReader reader;
+};
+
 template<typename T>
 Table<T> read_table(oead::util::BinaryReader& reader)
 {
