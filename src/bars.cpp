@@ -41,10 +41,13 @@ BarsFile::BarsFile(oead::util::BinaryReader& reader)
         files[i].metadata = {reader};
 
         reader.Seek(header.file_entries[i].asset_offset);
-        // if (std::strcmp((char*)&reader.span()[reader.Tell()], "FSTP") == 0)
-        files[i].audio = Fstp::read(reader);
-        // if (std::strcmp((char*)&reader.span()[reader.Tell()], "FWAV") == 0)
-        //     files[i].audio = Fwav::WaveFile(reader);
+        std::string sign = reader.ReadString(reader.Tell(), 4);
+
+        reader.Seek(header.file_entries[i].asset_offset);
+        if (sign == "FSTP")
+            files[i].audio = Fstp::read(reader);
+        else if (sign == "FWAV")
+            files[i].audio = Fwav::read(reader);
     }
 }
 

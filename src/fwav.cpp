@@ -6,43 +6,65 @@
 #include <oead/util/binary_reader.h>
 
 namespace NSound::Fwav {
-WaveInfo::WaveInfo(oead::util::BinaryReader& reader)
+WaveInfo read_info_block(oead::util::BinaryReader& reader)
 {
-    codec = *reader.Read<uint8_t>();
-    loop_flag = *reader.Read<uint8_t>();
-    sample_rate = *reader.Read<uint32_t>();
-    loop_start = *reader.Read<uint32_t>();
-    loop_end = *reader.Read<uint32_t>();
-    og_loop_start = *reader.Read<uint32_t>();
+    WaveInfo wav_info;
+    wav_info.header = *reader.Read<BlockHeader>();
+    wav_info.codec = *reader.Read<uint8_t>();
+    wav_info.loop_flag = *reader.Read<uint8_t>();
+    reader.Seek(reader.Tell() + 2);
+    wav_info.sample_rate = *reader.Read<uint32_t>();
+    wav_info.loop_start = *reader.Read<uint32_t>();
+    wav_info.sample_count = *reader.Read<uint32_t>();
+    wav_info.og_loop_start = *reader.Read<uint32_t>();
 
-    channel_info_ref_table.count = *reader.Read<uint32_t>();
-    channel_info_ref_table.items.resize(channel_info_ref_table.count);
-    for (auto &item : channel_info_ref_table.items)
-        item = *reader.Read<Reference>();
+    size_t channel_info_table_start = reader.Tell();
+    wav_info.channel_info_table = read_table<Reference>(reader);
+    wav_info.dsp_adpcm_info_array.resize(wav_info.channel_info_table.count);
+
+    if (wav_info.channel_info_table.count > 0) {
+        for (int i {0}; i<wav_info.channel_info_table.count; ++i) {
+            Reference channel_info_ref = wav_info.channel_info_table.items[i];
+            reader.Seek(channel_info_table_start + channel_info_ref.offset);
+            size_t current_offset = reader.Tell();
+            ChannelInfo channel_info = *reader.Read<ChannelInfo>();
+
+            reader.Seek(current_offset + channel_info.toAdpcmInfo.offset);
+            wav_info.dsp_adpcm_info_array[i] = *reader.Read<Fstp::DspAdpcmInfo>();
+        }
+    }
+
+    return wav_info;
 }
 
-DataBlock::DataBlock(oead::util::BinaryReader& reader)
-    :header{*reader.Read<BlockHeader>()}
+DataBlock read_data_block(oead::util::BinaryReader& reader)
 {
-    pcm16.resize(header.section_size - 8);
-    for (auto &sample : pcm16)
+    DataBlock data;
+    data.header = *reader.Read<BlockHeader>();
+    data.pcm16.resize(data.header.section_size - 8);
+    for (auto &sample : data.pcm16)
         sample = *reader.Read<uint16_t>();
+
+    return data;
 }
 
-WaveFile::WaveFile(oead::util::BinaryReader& reader)
+WaveFile read(oead::util::BinaryReader& reader)
 {
     size_t file_start = reader.Tell();
-    header = {reader};
+    WaveFile fwav;
+    fwav.header = AudioHeader{reader};
 
     std::array<uint8_t, 4> sign{'F','W','A','V'};
-    assert(header.signature == sign);
+    assert(fwav.header.signature == sign);
 
-    for (auto &ref : header.block_refs) {
+    for (auto &ref : fwav.header.block_refs) {
         reader.Seek(file_start + ref.offset);
         if (ref.type == 0x7000)
-            info = {reader};
+            fwav.info = read_info_block(reader);
         else if (ref.type == 0x7001)
-            block = {reader};
+            fwav.block = read_data_block(reader);
     }
+
+    return fwav;
 }
 } // NSound::Fwav

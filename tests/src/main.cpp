@@ -8,6 +8,7 @@
 #include <bars/bars.h>
 #include <bars/amta.h>
 #include <bars/fstp.h>
+#include <bars/fwav.h>
 #include <oead/util/binary_reader.h>
 #include "oead/util/swap.h"
 
@@ -47,7 +48,13 @@ int main(int argc, char **argv)
                 ofs.write(reinterpret_cast<char*>(&byte), sizeof(uint8_t));
         }
         catch (std::bad_variant_access&) {
-            std::cerr << "Not an FSTP file!" << '\n';
+            try {
+                NSound::Fwav::WaveFile fwav_file = std::get<NSound::Fwav::WaveFile>(entry.audio);
+                // std::ofstream {entry.metadata.strg_table.asset_name + ".fwav"};
+            }
+            catch (std::bad_variant_access&) {
+                std::cout << "Invalid audio file!" << '\n';
+            }
         }
 
     }
