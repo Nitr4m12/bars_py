@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <span>
 
 #include <oead/util/binary_reader.h>
 
@@ -53,6 +54,10 @@ struct AudioHeader {
 
 class AudioReader {
 public:
+
+    AudioReader(std::span<uint8_t> data, oead::util::Endianness endian)
+        :reader{data, endian} {}
+
     template <typename T>
     T read() { return *reader.Read<T>(); }
 
