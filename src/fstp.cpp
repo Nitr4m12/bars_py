@@ -47,6 +47,79 @@ PrefetchFile::PrefetchFile(AudioReader& reader)
     }
 }
 
+std::vector<uint8_t> PrefetchFile::serialize()
+{
+    AudioWriter writer;
+    writer.write<AudioHeader>(header);
+
+    for (auto& ref : header.block_refs) {
+        writer.seek(ref.offset);
+        switch (ref.type) {
+        case 0x4000:
+        {
+            writer.write<BlockHeader>(info.header);
+
+            size_t ref_array_start = writer.tell();
+            writer.write<Reference>(info.stminfo_ref);
+            writer.write<Reference>(info.track_info_table_ref);
+            writer.write<Reference>(info.channel_info_table_ref);
+
+            if (info.stminfo_ref.offset != -1) {
+                writer.seek(ref_array_start + info.stminfo_ref.offset);
+                writer.write<Fstm::StreamInfo>(info.stream_info);
+            }
+
+            if (info.track_info_table_ref.offset != -1) {
+                writer.seek(ref_array_start + info.track_info_table_ref.offset);
+                writer.write_table<Fstm::TrackInfo>(info.track_info_table);
+            }
+
+            if (info.channel_info_table_ref.offset != -1) {
+                writer.seek(ref_array_start + info.channel_info_table_ref.offset);
+
+                size_t channel_info_table_start = writer.tell();
+
+                writer.write_table<Reference>(info.channel_info_table);
+
+                if (info.channel_info_table.count > 0) {
+                    for (int i {0}; i<info.channel_info_table.count; ++i) {
+                        Reference channel_info = info.channel_info_table.items[i];
+
+                        writer.seek(channel_info_table_start + channel_info.offset);
+
+                        size_t ref_start = writer.tell();
+
+                        writer.write<Reference>(info.dsp_adpcm_ref_array[i]);
+
+                        writer.seek(ref_start + info.dsp_adpcm_ref_array[i].offset);
+
+                        writer.write<Fstm::DspAdpcmInfo>(info.dsp_adpcm_info_array[i]);
+                    }
+
+                }
+            }
+            break;
+        }
+        case 0x4004:
+        {
+            writer.write<BlockHeader>(pdat.header);
+
+            size_t pref_data_start = writer.tell();
+
+            writer.write_table<PrefetchData>(pdat.prefetch_data);
+
+            writer.seek(pref_data_start + pdat.prefetch_data.items[0].to_prefetch_samples.offset);
+            for (auto& sample : pdat.sample_data)
+                writer.write<uint8_t>(sample);
+        }
+        default:
+            break;
+        }
+    }
+
+    return writer.finalize();
+}
+
 std::vector<uint8_t> write(PrefetchFile& fstp)
 {
     oead::util::BinaryWriter writer{oead::util::Endianness::Little};

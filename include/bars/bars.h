@@ -48,18 +48,20 @@ struct ResourceHeader {
 
 class BarsFile {
 public:
+    BarsFile();
+    BarsFile(AudioReader& reader);
+
+    std::vector<uint8_t> serialize();
+
     struct FileWithMetadata {
-        Amta::AmtaFile  metadata;
+        Amta::AmtaFile metadata;
         std::variant<Fstp::PrefetchFile, Fwav::WaveFile> audio;
     };
 
-    std::vector<FileWithMetadata> file_entries() { return files; }
-
-    BarsFile();
-    BarsFile(AudioReader& reader);
+    std::vector<FileWithMetadata> file_entries() { return mFiles; }
 private:
-    ResourceHeader header;
-    std::vector<FileWithMetadata> files;
+    ResourceHeader mHeader;
+    std::vector<FileWithMetadata> mFiles;
 };
 
 }   // namespace NSound::Bars

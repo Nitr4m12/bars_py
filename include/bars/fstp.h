@@ -34,6 +34,8 @@ struct PrefetchFile {
 
     PrefetchFile() = default;
     PrefetchFile(AudioReader& reader);
+
+    std::vector<uint8_t> serialize();
 };
 
 } // namespace NSound::Fstp

@@ -32,10 +32,10 @@ struct StreamInfo {
     uint32_t last_block_padding_size {0};
     uint32_t seek_size {0};
     uint32_t sisc {0};
-    Reference to_sample_data {0x1f00, {0,0}, 0}; // relative to the start of the prefetch data
+    Reference to_sample_data {0x1f00, 0}; // relative to the start of the prefetch data
     uint16_t region_info_size {0};
     uint8_t padding[2] {0,0};
-    Reference region_ref {0x4003, {0,0}, 0};
+    Reference region_ref {0x4003, 0};
 };
 
 struct DspContext {
@@ -53,9 +53,9 @@ struct DspAdpcmInfo {
 struct InfoBlock {
     BlockHeader header {'I', 'N', 'F', 'O', 0x100};
 
-    Reference stminfo_ref {0x4100, {0, 0}, 0};
-    Reference track_info_table_ref {0x100, {0, 0}, 0};
-    Reference channel_info_table_ref {0x101, {0, 0}, 0};
+    Reference stminfo_ref {0x4100, 0};
+    Reference track_info_table_ref {0x100, 0};
+    Reference channel_info_table_ref {0x101, 0};
 
     StreamInfo  stream_info;
     Table<TrackInfo> track_info_table;

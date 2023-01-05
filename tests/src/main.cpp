@@ -27,4 +27,10 @@ int main(int argc, char **argv)
     NSound::AudioReader reader{buffer, oead::util::Endianness::Little};
 
     NSound::Bars::BarsFile bars{reader};
+
+    // 2. Write file
+    buffer.clear();
+    buffer = bars.serialize();
+    std::ofstream ofs {"test.bars"};
+    ofs.write((char*)buffer.data(), buffer.size());
 }

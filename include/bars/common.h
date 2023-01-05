@@ -20,13 +20,11 @@ struct BlockHeader {
 
 struct Reference {
     uint16_t type;
-    uint8_t padding[2];
     int32_t offset;
 };
 
 struct SizedReference {
     uint16_t type;
-    uint8_t padding[2];
     int32_t offset;
     uint32_t size;
 };
@@ -140,27 +138,36 @@ public:
         :writer{endian} {}
 
     template<typename T>
-    void write(T data) { writer.Write<T>(data); }
+    void write(T data)
+        { writer.Write<T>(data); }
 
-    void align_up(size_t n) { writer.AlignUp(n); }
+    template<> void write<AudioHeader>(AudioHeader data);
 
-    std::vector<uint8_t> finalize() { return writer.Finalize(); }
+    void write_cstr(std::string_view str) { writer.WriteCStr(str); }
+
+    template <typename T>
+    void write_table(Table<T> data)
+    {
+        write<uint32_t>(data.count);
+        for (auto& item : data.items)
+            write<T>(item);
+    }
+
+    void align_up(size_t n)
+        { writer.AlignUp(n); }
+
+    void seek(size_t offset)
+        { writer.Seek(offset); }
+
+    size_t tell() const
+        { return writer.Tell(); }
+
+    std::vector<uint8_t> finalize()
+        { return writer.Finalize(); }
 
 private:
     oead::util::BinaryWriter writer {oead::util::Endianness::Little};
 };
-
-template<typename T>
-Table<T> read_table(oead::util::BinaryReader& reader)
-{
-    Table<T> tbl;
-    tbl.count = *reader.Read<uint32_t>();
-    tbl.items.resize(tbl.count);
-    for (auto& item : tbl.items)
-        item = *reader.Read<T>();
-
-    return tbl;
-}
 
 void write_reference(oead::util::BinaryWriter& writer, Reference& ref);
 void write_sized_reference(oead::util::BinaryWriter& writer, SizedReference& sref);

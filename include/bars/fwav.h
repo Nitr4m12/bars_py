@@ -31,7 +31,8 @@ struct WaveInfo {
     uint32_t loop_start {0};
     uint32_t sample_count {0};
     uint32_t og_loop_start {0};
-    Table<Reference>  channel_info_table;
+    Table<Reference>  channel_info_ref_table;
+    std::vector<ChannelInfo> channel_info_array;
     std::vector<Fstm::DspAdpcmInfo> dsp_adpcm_info_array;
 
     WaveInfo() = default;
@@ -45,6 +46,8 @@ struct WaveFile {
 
     WaveFile() = default;
     WaveFile(AudioReader& reader);
+
+    std::vector<uint8_t> serialize();
 };
 } // namespace NSound::Fwav
 

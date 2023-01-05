@@ -27,33 +27,82 @@ ResourceHeader::ResourceHeader(AudioReader& reader)
 }
 
 BarsFile::BarsFile(AudioReader& reader)
-    :header{reader}
+    :mHeader{reader}
 {
 
     {
         // Check
         ResourceHeader def;
 
-        if (header.signature != def.signature) throw std::runtime_error("Invalid header!");
-        if (header.bom != VALID_BOM) throw std::runtime_error("Invalid Byte-Order Mark");
+        if (mHeader.signature != def.signature) throw std::runtime_error("Invalid header!");
+        if (mHeader.bom != VALID_BOM) throw std::runtime_error("Invalid Byte-Order Mark");
     }
 
-    files.resize(header.asset_count);
-    for (int i {0}; i<header.asset_count; ++i) {
-        reader.seek(header.file_entries[i].amta_offset);
-        files[i].metadata = {reader};
+    mFiles.resize(mHeader.asset_count);
+    for (int i {0}; i<mHeader.asset_count; ++i) {
+        reader.seek(mHeader.file_entries[i].amta_offset);
+        mFiles[i].metadata = {reader};
 
-        reader.seek(header.file_entries[i].asset_offset);
+        reader.seek(mHeader.file_entries[i].asset_offset);
         std::string sign {reader.read_string(4)};
 
-        reader.seek(header.file_entries[i].asset_offset);
+        reader.seek(mHeader.file_entries[i].asset_offset);
         if (sign == "FSTP")
-            files[i].audio = Fstp::PrefetchFile{reader};
+            mFiles[i].audio = Fstp::PrefetchFile{reader};
         else if (sign == "FWAV")
-            files[i].audio = Fwav::WaveFile{reader};
+            mFiles[i].audio = Fwav::WaveFile{reader};
         else
             throw std::runtime_error("Invalid asset header");
     }
+}
+
+std::vector<uint8_t> BarsFile::serialize()
+{
+    AudioWriter writer;
+
+    writer.write<typeof(mHeader.signature)>(mHeader.signature);
+    writer.write<uint32_t>(mHeader.file_size);
+    writer.write<uint16_t>(mHeader.bom);
+    writer.write<uint16_t>(mHeader.version);
+    writer.write<uint32_t>(mHeader.asset_count);
+
+    for (auto& crc32_hash : mHeader.crc32hashes)
+        writer.write<uint32_t>(crc32_hash);
+
+    for (auto& file_entry : mHeader.file_entries)
+        writer.write<ResourceHeader::FileEntry>(file_entry);
+
+    for (int i {0}; i<mFiles.size(); ++i) {
+        std::vector<uint8_t> amta_bytes = mFiles[i].metadata.serialize();
+        std::vector<uint8_t> asset_bytes;
+        switch (mFiles[i].metadata.data.type) {
+        case Amta::Data::Type::Wave:
+        {
+            Fwav::WaveFile fwav = std::get<Fwav::WaveFile>(mFiles[i].audio);
+            asset_bytes = fwav.serialize();
+            break;
+        }
+        case Amta::Data::Type::Stream:
+        {
+            Fstp::PrefetchFile fstp = std::get<Fstp::PrefetchFile>(mFiles[i].audio);
+            asset_bytes = fstp.serialize();
+            break;
+        }
+        default:
+            throw std::runtime_error("Invalid file type!");
+        }
+
+        writer.seek(mHeader.file_entries[i].amta_offset);
+        for (uint8_t byte : amta_bytes)
+            writer.write<uint8_t>(byte);
+
+        writer.seek(mHeader.file_entries[i].asset_offset);
+        for (uint8_t byte : asset_bytes)
+            writer.write<uint8_t>(byte);
+    }
+
+    return writer.finalize();
+
 }
 
 } // namespace Bars
