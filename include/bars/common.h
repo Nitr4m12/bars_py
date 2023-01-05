@@ -11,6 +11,7 @@
 #define NSOUND_COMMON_H
 
 namespace NSound {
+class AudioReader;
 constexpr int VALID_BOM = 0xFEFF;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
@@ -23,14 +24,17 @@ struct Reference {
     int32_t offset;
 };
 
+struct SizedReference {
+    uint16_t type;
+    uint8_t padding[2];
+    int32_t offset;
+    uint32_t size;
+};
+
 template<typename T>
 struct Table {
     uint32_t count;
     std::vector<T> items;
-};
-
-struct SizedReference : Reference {
-    uint32_t size;
 };
 
 struct ReferenceTable : Table<Reference> {};
@@ -48,7 +52,7 @@ struct AudioHeader {
     std::vector<SizedReference> block_refs;
 
     AudioHeader() = default;
-    AudioHeader(oead::util::BinaryReader& reader);
+    AudioHeader(AudioReader& reader);
 };
 
 class AudioReader {
@@ -58,12 +62,24 @@ public:
         :reader{data, endian} {}
 
     template <typename T>
-    T read() { return *reader.Read<T>(); }
+    T read()
+        { return *reader.Read<T>(); }
 
     template <typename T>
-    T read_at(size_t offset) { return *reader.Read<T>(offset); }
+    T read_at(size_t offset)
+        { return *reader.Read<T>(offset); }
 
-    void seek(size_t offset) { reader.Seek(offset); }
+    std::string read_string(size_t max_len)
+        { return reader.ReadString(reader.Tell(), max_len); }
+
+    std::string read_string_at(size_t offset, size_t max_len)
+        { return reader.ReadString(offset, max_len); }
+
+    void seek(size_t offset)
+        { reader.Seek(offset); }
+
+    size_t tell() const
+        { return reader.Tell(); }
 
     template<typename T>
     Table<T> read_table()

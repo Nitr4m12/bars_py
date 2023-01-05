@@ -43,7 +43,6 @@ struct ResourceHeader {
     std::vector<FileEntry> file_entries;
 
     ResourceHeader() = default;
-    ResourceHeader(oead::util::BinaryReader& reader);
     ResourceHeader(AudioReader& reader);
 };
 
@@ -57,7 +56,6 @@ public:
     std::vector<FileWithMetadata> file_entries() { return files; }
 
     BarsFile();
-    BarsFile(oead::util::BinaryReader& reader);
     BarsFile(AudioReader& reader);
 private:
     ResourceHeader header;

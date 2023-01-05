@@ -8,58 +8,53 @@
 #include "oead/util/swap.h"
 
 namespace NSound::Amta {
-Marker::Marker(oead::util::BinaryReader& reader)
+StringTable::StringTable(AudioReader& reader)
 {
-    header = *reader.Read<BlockHeader>();
-    assert(header.signature == signatures["MARK"]);
+    header = reader.read<BlockHeader>();
+    asset_name = reader.read_string(header.section_size);
+}
 
-    entry_count = *reader.Read<uint32_t>();
+Ext_::Ext_(AudioReader& reader)
+{
+    header = reader.read<BlockHeader>();
+    entry_count = reader.read<uint32_t>();
+
+    if (entry_count > 0) {
+        ext_entries.resize(entry_count);
+        for (auto &entry: ext_entries)
+            entry = reader.read<ExtEntry>();
+    }
+
+}
+
+Marker::Marker(AudioReader& reader)
+{
+    header = reader.read<BlockHeader>();
+    entry_count = reader.read<uint32_t>();
 
     if (entry_count > 0) {
         marker_infos.resize(entry_count);
         for (auto &entry : marker_infos)
-            entry = *reader.Read<MarkerInfo>();
+            entry = reader.read<MarkerInfo>();
     }
 }
 
-Ext_::Ext_(oead::util::BinaryReader& reader)
+AmtaFile::AmtaFile(AudioReader& reader)
 {
-    header = *reader.Read<BlockHeader>();
-    assert(header.signature == signatures["EXT_"]);
+    size_t amta_start = reader.tell();
+    header = reader.read<Header>();
 
-    entry_count = *reader.Read<uint32_t>();
+    data = reader.read_at<Data>(amta_start + header.data_offset);
 
-    if (entry_count > 0) {
-        ext_entries.resize(entry_count);
-        for (auto &entry : ext_entries)
-            entry = *reader.Read<ExtEntry>();
-    }
-}
-
-StringTable::StringTable(oead::util::BinaryReader& reader)
-{
-    header = *reader.Read<BlockHeader>();
-    assert(header.signature == signatures["STRG"]);
-
-    asset_name = reader.ReadString(reader.Tell(), header.section_size);
-}
-
-AmtaFile::AmtaFile(oead::util::BinaryReader& reader)
-{
-    size_t amta_start = reader.Tell();
-    header = *reader.Read<Header>();
-    assert(header.signature == signatures["AMTA"]);
-
-    data = *reader.Read<Data>(amta_start + header.data_offset);
-
-    reader.Seek(amta_start + header.marker_offset);
+    reader.seek(amta_start + header.marker_offset);
     marker = Marker{reader};
 
-    reader.Seek(amta_start + header.ext_offset);
+    reader.seek(amta_start + header.ext_offset);
     ext = Ext_{reader};
 
-    reader.Seek(amta_start + header.string_table_offset);
+    reader.seek(amta_start + header.string_table_offset);
     strg_table = StringTable{reader};
+
 }
 
 void write_strg_section(oead::util::BinaryWriter& writer, StringTable& strg)

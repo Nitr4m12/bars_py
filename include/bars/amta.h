@@ -11,7 +11,6 @@
 
 namespace NSound::Amta {
 struct Data {
-
     enum Type : uint8_t { Wave = 0, Stream };
 
     BlockHeader header {'D', 'A', 'T', 'A', 0x64};
@@ -25,7 +24,7 @@ struct Data {
     uint8_t used_stream_tracks {0};  // Up to 8
     uint8_t flags {0};
     float volume {static_cast<float>(0x3d5e2dc2)};
-    uint32_t sample_rate {0x48000};
+    uint32_t sample_rate {48000};
     uint32_t loop_start_sample {0};
     uint32_t loop_end_sample {0};
     float loudness {static_cast<float>(0x912bb9c1)};
@@ -37,7 +36,6 @@ struct Data {
     std::array<StreamTrack, 8> stream_tracks;
 
     float amplitude_peak {static_cast<float>(0x4b52414d)};  // Only in Version 4.0!!!!!
-
 }__attribute__((packed));
 
 struct Marker {
@@ -56,8 +54,8 @@ struct Marker {
     std::vector<MarkerInfo> marker_infos;  // size = this.entry_count
 
     Marker() = default;
-    Marker(oead::util::BinaryReader& reader);
-};
+    Marker(AudioReader& reader);
+}__attribute__((packed));
 
 struct Ext_ {
     BlockHeader header {{'E', 'X', 'T', '_'}, 0x4};
@@ -69,7 +67,7 @@ struct Ext_ {
     std::vector<ExtEntry> ext_entries;  // size = this.entry_count
 
     Ext_() = default;
-    Ext_(oead::util::BinaryReader& reader);
+    Ext_(AudioReader& reader);
 }__attribute__((packed));
 
 struct StringTable {
@@ -77,7 +75,7 @@ struct StringTable {
     std::string asset_name;
 
     StringTable() = default;
-    StringTable(oead::util::BinaryReader& reader);
+    StringTable(AudioReader& reader);
 };
 
 struct Header {
@@ -90,7 +88,6 @@ struct Header {
     uint32_t marker_offset {0};
     uint32_t ext_offset {0};
     uint32_t string_table_offset {0};
-
 };
 
 struct AmtaFile {
@@ -102,6 +99,7 @@ struct AmtaFile {
 
     AmtaFile() = default;
     AmtaFile(oead::util::BinaryReader& reader);
+    AmtaFile(AudioReader& reader);
 };
 
 void write_strg_section(oead::util::BinaryWriter& writer, StringTable& strg);

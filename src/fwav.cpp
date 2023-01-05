@@ -6,65 +6,53 @@
 #include <oead/util/binary_reader.h>
 
 namespace NSound::Fwav {
-WaveInfo read_info_block(oead::util::BinaryReader& reader)
+WaveInfo::WaveInfo(AudioReader& reader)
 {
-    WaveInfo wav_info;
-    wav_info.header = *reader.Read<BlockHeader>();
-    wav_info.codec = *reader.Read<uint8_t>();
-    wav_info.loop_flag = *reader.Read<uint8_t>();
-    reader.Seek(reader.Tell() + 2);
-    wav_info.sample_rate = *reader.Read<uint32_t>();
-    wav_info.loop_start = *reader.Read<uint32_t>();
-    wav_info.sample_count = *reader.Read<uint32_t>();
-    wav_info.og_loop_start = *reader.Read<uint32_t>();
+    header = reader.read<BlockHeader>();
+    codec = reader.read<Fstm::StreamInfo::Codec>();
+    loop_flag = reader.read<uint8_t>();
+    reader.seek(reader.tell() + 2);
+    sample_rate = reader.read<uint32_t>();
+    loop_start = reader.read<uint32_t>();
+    sample_count = reader.read<uint32_t>();
+    og_loop_start = reader.read<uint32_t>();
 
-    size_t channel_info_table_start = reader.Tell();
-    wav_info.channel_info_table = read_table<Reference>(reader);
-    wav_info.dsp_adpcm_info_array.resize(wav_info.channel_info_table.count);
+    size_t channel_info_table_start = reader.tell();
+    channel_info_table = reader.read_ref_table();
+    dsp_adpcm_info_array.resize(channel_info_table.count);
 
-    if (wav_info.channel_info_table.count > 0) {
-        for (int i {0}; i<wav_info.channel_info_table.count; ++i) {
-            Reference channel_info_ref = wav_info.channel_info_table.items[i];
-            reader.Seek(channel_info_table_start + channel_info_ref.offset);
-            size_t current_offset = reader.Tell();
-            ChannelInfo channel_info = *reader.Read<ChannelInfo>();
+    if (channel_info_table.count > 0) {
+        for (int i {0}; i<channel_info_table.count; ++i) {
+            Reference channel_info_ref = channel_info_table.items[i];
+            reader.seek(channel_info_table_start + channel_info_ref.offset);
+            size_t current_offset = reader.tell();
+            ChannelInfo channel_info = reader.read<ChannelInfo>();
 
-            reader.Seek(current_offset + channel_info.toAdpcmInfo.offset);
-            wav_info.dsp_adpcm_info_array[i] = *reader.Read<Fstp::DspAdpcmInfo>();
+            reader.seek(current_offset + channel_info.toAdpcmInfo.offset);
+            dsp_adpcm_info_array[i] = reader.read<Fstm::DspAdpcmInfo>();
         }
     }
-
-    return wav_info;
 }
 
-DataBlock read_data_block(oead::util::BinaryReader& reader)
+DataBlock::DataBlock(AudioReader& reader)
 {
-    DataBlock data;
-    data.header = *reader.Read<BlockHeader>();
-    data.pcm16.resize(data.header.section_size - 8);
-    for (auto &sample : data.pcm16)
-        sample = *reader.Read<uint16_t>();
-
-    return data;
+    header = reader.read<BlockHeader>();
+    pcm16.resize(header.section_size - 8);
+    for (auto &sample : pcm16)
+        sample = reader.read<uint16_t>();
 }
 
-WaveFile read(oead::util::BinaryReader& reader)
+WaveFile::WaveFile(AudioReader& reader)
 {
-    size_t file_start = reader.Tell();
-    WaveFile fwav;
-    fwav.header = AudioHeader{reader};
+    size_t file_start = reader.tell();
+    header = {reader};
 
-    std::array<uint8_t, 4> sign{'F','W','A','V'};
-    assert(fwav.header.signature == sign);
-
-    for (auto &ref : fwav.header.block_refs) {
-        reader.Seek(file_start + ref.offset);
+    for (auto &ref : header.block_refs) {
+        reader.seek(file_start + ref.offset);
         if (ref.type == 0x7000)
-            fwav.info = read_info_block(reader);
+            info = {reader};
         else if (ref.type == 0x7001)
-            fwav.block = read_data_block(reader);
+            block = {reader};
     }
-
-    return fwav;
 }
 } // NSound::Fwav

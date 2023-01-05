@@ -20,19 +20,19 @@ enum class ReferenceTypes
     WaveData
 };
 
-AudioHeader::AudioHeader(oead::util::BinaryReader& reader)
+AudioHeader::AudioHeader(AudioReader& reader)
 {
-    signature = *reader.Read<typeof(signature)>();
-    bom = *reader.Read<uint16_t>();
-    head_size = *reader.Read<uint16_t>();
-    version = *reader.Read<uint32_t>();
-    file_size = *reader.Read<uint32_t>();
-    block_count = *reader.Read<uint16_t>();
-    reserved = *reader.Read<uint16_t>();
+    signature = reader.read<typeof(signature)>();
+    bom = reader.read<uint16_t>();
+    head_size = reader.read<uint16_t>();
+    version = reader.read<uint32_t>();
+    file_size = reader.read<uint32_t>();
+    block_count = reader.read<uint16_t>();
+    reserved = reader.read<uint16_t>();
 
     block_refs.resize(block_count);
     for (auto &block_ref : block_refs)
-        block_ref = *reader.Read<NSound::SizedReference>();
+        block_ref = reader.read<NSound::SizedReference>();
 }
 
 void write_reference(oead::util::BinaryWriter& writer, Reference& ref)

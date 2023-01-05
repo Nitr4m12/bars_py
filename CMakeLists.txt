@@ -18,9 +18,11 @@ add_library(bars
     include/bars/common.h
     include/bars/fstp.h
     include/bars/fwav.h
+    include/bars/fstm.h
     src/bars.cpp
     src/amta.cpp
     src/fstp.cpp
+    src/fstm.cpp
     src/fwav.cpp
     src/common.cpp
 )
