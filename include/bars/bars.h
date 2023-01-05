@@ -25,12 +25,12 @@
 
 namespace NSound::Bars {
 struct Header {
-    std::array<uint8_t, 4> signature;
+    std::array<uint8_t, 4> signature {'B', 'A', 'R', 'S'};
 
-    uint32_t file_size;
-    uint16_t bom;
-    uint16_t version;
-    uint32_t asset_count;
+    uint32_t file_size {0};
+    uint16_t bom {0xFEFF};
+    uint16_t version {0x101};
+    uint32_t asset_count {0};
 
     // size = this.asset_count; must be sorted
     std::vector<uint32_t> crc32hashes;
