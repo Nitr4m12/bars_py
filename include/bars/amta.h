@@ -11,15 +11,16 @@
 
 namespace NSound::Amta {
 struct Data {
+
     enum Type : uint8_t { Wave = 0, Stream };
 
-    BlockHeader header;
+    BlockHeader header {'D', 'A', 'T', 'A', 0x64};
 
     // can be 0, but still have an entry in the string table
     uint32_t asset_name_offset;
 
     uint32_t sample_count;
-    Type type;  // 0=Wave, 1=Stream
+    Type type;
     uint8_t wave_channels;
     uint8_t used_stream_tracks;  // Up to 8
     uint8_t flags;
@@ -36,10 +37,11 @@ struct Data {
     std::array<StreamTrack, 8> stream_tracks;
 
     float amplitude_peak;  // Only in Version 4.0!!!!!
-};
+
+}__attribute__((packed));
 
 struct Marker {
-    BlockHeader header;
+    BlockHeader header {'M', 'A', 'R', 'K', 0x4};
     uint32_t entry_count;
 
     struct MarkerInfo {
@@ -58,8 +60,8 @@ struct Marker {
 };
 
 struct Ext_ {
-    BlockHeader header;
-    uint32_t entry_count;
+    BlockHeader header {{'E', 'X', 'T', '_'}, 0x4};
+    uint32_t entry_count {0};
 
     struct ExtEntry {
       uint32_t unknown[2];
@@ -68,7 +70,7 @@ struct Ext_ {
 
     Ext_() = default;
     Ext_(oead::util::BinaryReader& reader);
-};
+}__attribute__((packed));
 
 struct StringTable {
     BlockHeader header;
@@ -79,15 +81,15 @@ struct StringTable {
 };
 
 struct Header {
-    std::array<uint8_t, 4> signature;
+    std::array<uint8_t, 4> signature {'A', 'M', 'T', 'A'};
 
-    uint16_t bom;
-    uint16_t version;  // 0x100, 0x300 or 0x400
-    uint32_t file_size;
-    uint32_t data_offset;
-    uint32_t marker_offset;
-    uint32_t ext__offset;
-    uint32_t string_table_offset;
+    uint16_t bom {0xFEFF};
+    uint16_t version {0x400};  // 0x100, 0x300 or 0x400
+    uint32_t file_size {0};
+    uint32_t data_offset {0};
+    uint32_t marker_offset {0};
+    uint32_t ext_offset {0};
+    uint32_t string_table_offset {0};
 
 };
 

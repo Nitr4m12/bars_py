@@ -55,7 +55,7 @@ AmtaFile::AmtaFile(oead::util::BinaryReader& reader)
     reader.Seek(amta_start + header.marker_offset);
     marker = Marker{reader};
 
-    reader.Seek(amta_start + header.ext__offset);
+    reader.Seek(amta_start + header.ext_offset);
     ext = Ext_{reader};
 
     reader.Seek(amta_start + header.string_table_offset);
