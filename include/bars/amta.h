@@ -17,26 +17,26 @@ struct Data {
     BlockHeader header {'D', 'A', 'T', 'A', 0x64};
 
     // can be 0, but still have an entry in the string table
-    uint32_t asset_name_offset;
+    uint32_t asset_name_offset {0};
 
-    uint32_t sample_count;
-    Type type;
-    uint8_t wave_channels;
-    uint8_t used_stream_tracks;  // Up to 8
-    uint8_t flags;
-    float volume;
-    uint32_t sample_rate;
-    uint32_t loop_start_sample;
-    uint32_t loop_end_sample;
-    float loudness;
+    uint32_t sample_count {0};
+    Type type {Wave};
+    uint8_t wave_channels {0};
+    uint8_t used_stream_tracks {0};  // Up to 8
+    uint8_t flags {0};
+    float volume {static_cast<float>(0x3d5e2dc2)};
+    uint32_t sample_rate {0x48000};
+    uint32_t loop_start_sample {0};
+    uint32_t loop_end_sample {0};
+    float loudness {static_cast<float>(0x912bb9c1)};
 
     struct StreamTrack {
-      uint32_t channel_count;
-      float volume;
+      uint32_t channel_count {0};
+      float volume {0x3f800000};
     };
     std::array<StreamTrack, 8> stream_tracks;
 
-    float amplitude_peak;  // Only in Version 4.0!!!!!
+    float amplitude_peak {static_cast<float>(0x4b52414d)};  // Only in Version 4.0!!!!!
 
 }__attribute__((packed));
 

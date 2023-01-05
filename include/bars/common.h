@@ -12,7 +12,6 @@
 
 namespace NSound {
 constexpr int VALID_BOM = 0xFEFF;
-extern std::map<std::string, std::array<uint8_t, 4>> signatures;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
     uint32_t section_size;
@@ -30,12 +29,12 @@ struct Table {
     std::vector<T> items;
 };
 
-struct SizedReference {
-    uint16_t type;
-    uint8_t padding[2];
-    int32_t offset;
+struct SizedReference : Reference {
     uint32_t size;
 };
+
+struct ReferenceTable : Table<Reference> {};
+struct SizedReferenceTable : Table<Reference> {};
 
 struct AudioHeader {
     std::array<uint8_t, 4> signature;
@@ -64,6 +63,8 @@ public:
     template <typename T>
     T read_at(size_t offset) { return *reader.Read<T>(offset); }
 
+    void seek(size_t offset) { reader.Seek(offset); }
+
     template<typename T>
     Table<T> read_table()
     {
@@ -76,7 +77,41 @@ public:
         return tbl;
     }
 
-    void seek(size_t offset) { reader.Seek(offset); }
+    template<typename T>
+    T read_reference(std::optional<size_t> offset = std::nullopt)
+    {
+        // Read a struct referenced by a Reference. If an offset
+        // is provided, use that as a starting point from where
+        // to seek
+
+        Reference ref;
+        size_t start_offset;
+        size_t return_offset = reader.Tell();
+        if (offset)
+            start_offset = *offset;
+        else
+            start_offset = return_offset;
+
+        ref = read<Reference>();
+        reader.Seek(start_offset + ref.offset);
+
+        T referenced = read<T>();
+
+        reader.Seek(return_offset + sizeof(Reference));
+
+        return referenced;
+    }
+
+    ReferenceTable read_ref_table()
+    {
+        ReferenceTable ref_tbl;
+        ref_tbl.count = *reader.Read<uint32_t>();
+        ref_tbl.items.resize(ref_tbl.count);
+        for (auto& item : ref_tbl.items)
+            item = *reader.Read<Reference>();
+
+        return ref_tbl;
+    }
 
 private:
     oead::util::BinaryReader reader;
@@ -94,6 +129,7 @@ public:
     void align_up(size_t n) { writer.AlignUp(n); }
 
     std::vector<uint8_t> finalize() { return writer.Finalize(); }
+
 private:
     oead::util::BinaryWriter writer {oead::util::Endianness::Little};
 };

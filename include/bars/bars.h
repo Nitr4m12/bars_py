@@ -24,7 +24,7 @@
 #include <oead/util/binary_reader.h>
 
 namespace NSound::Bars {
-struct Header {
+struct ResourceHeader {
     std::array<uint8_t, 4> signature {'B', 'A', 'R', 'S'};
 
     uint32_t file_size {0};
@@ -42,8 +42,9 @@ struct Header {
     // size = this.asset_count; same order as the CRC32 hashes
     std::vector<FileEntry> file_entries;
 
-    Header() = default;
-    Header(oead::util::BinaryReader& reader);
+    ResourceHeader() = default;
+    ResourceHeader(oead::util::BinaryReader& reader);
+    ResourceHeader(AudioReader& reader);
 };
 
 class BarsFile {
@@ -57,8 +58,9 @@ public:
 
     BarsFile();
     BarsFile(oead::util::BinaryReader& reader);
+    BarsFile(AudioReader& reader);
 private:
-    Header header;
+    ResourceHeader header;
     std::vector<FileWithMetadata> files;
 };
 

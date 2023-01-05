@@ -6,7 +6,7 @@
 #include <bars/bars.h>
 
 namespace NSound::Bars {
-Header::Header(oead::util::BinaryReader& reader)
+ResourceHeader::ResourceHeader(oead::util::BinaryReader& reader)
 {
     signature = *reader.Read<typeof(signature)>();
     file_size = *reader.Read<uint32_t>();
@@ -23,6 +23,26 @@ Header::Header(oead::util::BinaryReader& reader)
     for (auto &entry : file_entries) {
         entry.amta_offset = *reader.Read<uint32_t>();
         entry.asset_offset = *reader.Read<uint32_t>();
+    }
+}
+
+ResourceHeader::ResourceHeader(AudioReader& reader)
+{
+    signature = reader.read<typeof(signature)>();
+    file_size = reader.read<uint32_t>();
+    bom = reader.read<uint16_t>();
+    version = reader.read<uint16_t>();
+    asset_count = reader.read<uint32_t>();
+
+    crc32hashes.resize(asset_count);
+    file_entries.resize(asset_count);
+
+    for (auto &hash : crc32hashes)
+        hash = reader.read<uint32_t>();
+
+    for (auto &entry : file_entries) {
+        entry.amta_offset = reader.read<uint32_t>();
+        entry.asset_offset = reader.read<uint32_t>();
     }
 }
 
@@ -49,6 +69,12 @@ BarsFile::BarsFile(oead::util::BinaryReader& reader)
         else if (sign == "FWAV")
             files[i].audio = Fwav::read(reader);
     }
+}
+
+BarsFile::BarsFile(AudioReader& reader)
+    :header{reader}
+{
+
 }
 
 } // namespace Bars

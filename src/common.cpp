@@ -9,19 +9,6 @@
 #include "oead/util/binary_reader.h"
 
 namespace NSound {
-std::map<std::string, std::array<uint8_t, 4>> signatures {
-    {"AMTA", {'A', 'M', 'T', 'A'}},
-    {"BARS", {'B', 'A', 'R', 'S'}},
-    {"MARK", {'M', 'A', 'R', 'K'}},
-    {"DATA", {'D', 'A', 'T', 'A'}},
-    {"EXT_", {'E', 'X', 'T', '_'}},
-    {"STRG", {'S', 'T', 'R', 'G'}},
-    {"FWAV", {'F', 'W', 'A', 'V'}},
-    {"FSTP", {'F', 'S', 'T', 'P'}},
-    {"INFO", {'I', 'N', 'F', 'O'}},
-    {"PDAT", {'P', 'D', 'A', 'T'}}
-};
-
 enum class ReferenceTypes
 {
     StreamInfo=0x4000,
