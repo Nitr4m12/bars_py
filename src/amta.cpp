@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <oead/util/swap.h>
 #include <oead/util/binary_reader.h>
+#include <oead/util/swap.h>
 
 #include "bars/amta.h"
 #include "bars/common.h"
@@ -37,24 +37,35 @@ Marker::Marker(AudioReader& reader) {
     }
 }
 
-AmtaFile::AmtaFile(AudioReader& reader) {
-    size_t amta_start = reader.tell();
+AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
+                   std::vector<uint8_t>::iterator end) {
+
+    AudioReader reader{{begin, end}};
+
     header = reader.read<Header>();
+    if (header.bom == 0xFFFE) {
+        reader.swap_endian();
+        reader.seek(0);
+        header = reader.read<Header>();
+    }
 
-    data = reader.read_at<Data>(amta_start + header.data_offset);
+    endianness = reader.endian();
 
-    reader.seek(amta_start + header.marker_offset);
+    data = reader.read_at<Data>(header.data_offset);
+
+    reader.seek(header.marker_offset);
     marker = Marker{reader};
 
-    reader.seek(amta_start + header.ext_offset);
+    reader.seek(header.ext_offset);
     ext = Ext_{reader};
 
-    reader.seek(amta_start + header.strg_offset);
+    reader.seek(header.strg_offset);
     strg = Strg{reader};
 }
 
 std::vector<uint8_t> AmtaFile::serialize() {
-    AudioWriter writer;
+    AudioWriter writer{endianness};
+
     size_t amta_start{writer.tell()};
     writer.write<Header>(header);
 

@@ -46,7 +46,6 @@ struct AudioHeader {
     uint32_t file_size;
     uint16_t block_count;
     uint16_t reserved;
-    // Size = this.block_count
     std::vector<SizedReference> block_refs;
 
     AudioHeader() = default;
@@ -54,7 +53,10 @@ struct AudioHeader {
 };
 
 class AudioReader {
-  public:
+public:
+    AudioReader() = default;
+    AudioReader(std::span<uint8_t> data)
+        : reader{data, oead::util::Endianness::Little} {}
     AudioReader(std::span<uint8_t> data, oead::util::Endianness endian)
         : reader{data, endian} {}
 
@@ -76,6 +78,7 @@ class AudioReader {
         return reader.ReadString(offset, max_len);
     }
 
+    std::span<const uint8_t> data() const { return reader.span(); }
     void seek(size_t offset) { reader.Seek(offset); }
 
     size_t tell() const { return reader.Tell(); }
@@ -125,12 +128,21 @@ class AudioReader {
         return ref_tbl;
     }
 
-  private:
+    void swap_endian() {
+        if (reader.Endian() == oead::util::Endianness::Little)
+            reader.SetEndian(oead::util::Endianness::Big);
+        else
+            reader.SetEndian(oead::util::Endianness::Little);
+    }
+
+    oead::util::Endianness endian() const { return reader.Endian(); }
+
+private:
     oead::util::BinaryReader reader;
 };
 
 class AudioWriter {
-  public:
+public:
     AudioWriter() = default;
     AudioWriter(oead::util::Endianness endian) : writer{endian} {}
 
@@ -157,9 +169,11 @@ class AudioWriter {
 
     size_t tell() const { return writer.Tell(); }
 
+    oead::util::Endianness endian() const { return writer.Endian(); };
+
     std::vector<uint8_t> finalize() { return writer.Finalize(); }
 
-  private:
+private:
     oead::util::BinaryWriter writer{oead::util::Endianness::Little};
 };
 

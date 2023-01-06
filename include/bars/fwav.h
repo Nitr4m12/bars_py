@@ -44,8 +44,11 @@ struct WaveFile {
     WaveInfo info;
     DataBlock block;
 
+    oead::util::Endianness endianness;
+
     WaveFile() = default;
-    WaveFile(AudioReader& reader);
+    WaveFile(std::vector<uint8_t>::iterator begin,
+             std::vector<uint8_t>::iterator end);
 
     std::vector<uint8_t> serialize();
 };

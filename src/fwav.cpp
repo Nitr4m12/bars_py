@@ -44,12 +44,22 @@ DataBlock::DataBlock(AudioReader& reader) {
         sample = reader.read<uint16_t>();
 }
 
-WaveFile::WaveFile(AudioReader& reader) {
-    size_t file_start = reader.tell();
+WaveFile::WaveFile(std::vector<uint8_t>::iterator begin,
+                   std::vector<uint8_t>::iterator end) {
+
+    AudioReader reader{{begin, end}};
+
     header = {reader};
+    if (header.bom == 0xFFFE) {
+        reader.swap_endian();
+        reader.seek(0);
+        header = {reader};
+    }
+
+    endianness = reader.endian();
 
     for (auto& ref : header.block_refs) {
-        reader.seek(file_start + ref.offset);
+        reader.seek(ref.offset);
         if (ref.type == 0x7000)
             info = {reader};
         else if (ref.type == 0x7001)
@@ -58,7 +68,7 @@ WaveFile::WaveFile(AudioReader& reader) {
 }
 
 std::vector<uint8_t> WaveFile::serialize() {
-    AudioWriter writer;
+    AudioWriter writer{endianness};
 
     writer.write<AudioHeader>(header);
     for (auto& ref : header.block_refs) {

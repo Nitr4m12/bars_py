@@ -9,8 +9,7 @@
 #include <bars/amta.h>
 #include <bars/fstp.h>
 #include <bars/fwav.h>
-#include "bars/common.h"
-#include "oead/util/swap.h"
+#include <bars/common.h>
 
 int main(int argc, char **argv)
 {
@@ -21,9 +20,7 @@ int main(int argc, char **argv)
         ifs.read((char*)buffer.data(), buffer.size());
     }
 
-    NSound::AudioReader reader{buffer, oead::util::Endianness::Little};
-
-    NSound::Bars::BarsFile bars{reader};
+    NSound::Bars::BarsFile bars{buffer};
 
     // 2. Write file
     buffer.clear();
@@ -32,8 +29,8 @@ int main(int argc, char **argv)
     ofs.write((char*)buffer.data(), buffer.size());
 
     // 3. Get file
-    NSound::Bars::BarsFile::FileWithMetadata file {bars.get_file("WallRock_Break")};
-    std::cout << "File " << file.audio.index() << " was found!" << '\n';
+    NSound::Bars::BarsFile::FileWithMetadata file {bars.get_file(0)};
+    std::cout << "File " << file.metadata.strg.asset_name << " was found!" << '\n';
 
 
 }

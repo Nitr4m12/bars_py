@@ -3,8 +3,8 @@
 
 #include <oead/util/binary_reader.h>
 
-#include "bars/fstm.h"
 #include "bars/common.h"
+#include "bars/fstm.h"
 
 #ifndef NSOUND_FSTP_H
 #define NSOUND_FSTP_H
@@ -33,8 +33,11 @@ struct PrefetchFile {
     Fstm::InfoBlock info;
     PrefetchDataBlock pdat;
 
+    oead::util::Endianness endianness;
+
     PrefetchFile() = default;
-    PrefetchFile(AudioReader& reader);
+    PrefetchFile(std::vector<uint8_t>::iterator begin,
+                 std::vector<uint8_t>::iterator end);
 
     std::vector<uint8_t> serialize();
 };

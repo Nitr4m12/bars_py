@@ -99,8 +99,11 @@ struct AmtaFile {
     Ext_ ext;
     Strg strg;
 
+    oead::util::Endianness endianness;
+
     AmtaFile() = default;
-    AmtaFile(AudioReader& reader);
+    AmtaFile(std::vector<uint8_t>::iterator begin,
+             std::vector<uint8_t>::iterator end);
 
     std::vector<uint8_t> serialize();
 };

@@ -33,12 +33,22 @@ PrefetchDataBlock::PrefetchDataBlock(AudioReader& reader) {
         sample_data[i] = reader.read<uint8_t>();
 }
 
-PrefetchFile::PrefetchFile(AudioReader& reader) {
-    size_t file_start = reader.tell();
+PrefetchFile::PrefetchFile(std::vector<uint8_t>::iterator begin,
+                           std::vector<uint8_t>::iterator end) {
+
+    AudioReader reader{{begin, end}};
+
     header = {reader};
+    if (header.bom == 0xFFFE) {
+        reader.swap_endian();
+        reader.seek(0);
+        header = {reader};
+    }
+
+    endianness = reader.endian();
 
     for (auto& ref : header.block_refs) {
-        reader.seek(file_start + ref.offset);
+        reader.seek(ref.offset);
         if (ref.type == 0x4000)
             info = {reader};
         else if (ref.type == 0x4004)
@@ -47,9 +57,9 @@ PrefetchFile::PrefetchFile(AudioReader& reader) {
 }
 
 std::vector<uint8_t> PrefetchFile::serialize() {
-    AudioWriter writer;
-    writer.write<AudioHeader>(header);
+    AudioWriter writer{endianness};
 
+    writer.write<AudioHeader>(header);
     for (auto& ref : header.block_refs) {
         writer.seek(ref.offset);
         switch (ref.type) {

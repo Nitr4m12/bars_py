@@ -49,9 +49,8 @@ struct ResourceHeader {
 };
 
 class BarsFile {
-  public:
-    BarsFile();
-    BarsFile(AudioReader& reader);
+public:
+    BarsFile(std::vector<uint8_t> buffer);
 
     std::vector<uint8_t> serialize();
 
@@ -66,11 +65,12 @@ class BarsFile {
         uint32_t hash{oead::util::crc32(name)};
         int idx{lookup(mHeader.crc32hashes, hash)};
         if (idx < 0)
-            throw std::runtime_error("File not found");
+            throw std::runtime_error("BarsFile: File not found");
         return mFiles[idx];
     }
 
-  private:
+private:
+    AudioReader mReader;
     ResourceHeader mHeader;
     std::vector<FileWithMetadata> mFiles;
 
