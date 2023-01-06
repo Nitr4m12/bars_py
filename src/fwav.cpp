@@ -6,8 +6,7 @@
 #include <oead/util/binary_reader.h>
 
 namespace NSound::Fwav {
-WaveInfo::WaveInfo(AudioReader& reader)
-{
+WaveInfo::WaveInfo(AudioReader& reader) {
     header = reader.read<BlockHeader>();
     codec = reader.read<Fstm::StreamInfo::Codec>();
     loop_flag = reader.read<uint8_t>();
@@ -23,7 +22,7 @@ WaveInfo::WaveInfo(AudioReader& reader)
     channel_info_array.resize(channel_info_ref_table.count);
 
     if (channel_info_ref_table.count > 0) {
-        for (int i {0}; i<channel_info_ref_table.count; ++i) {
+        for (int i{0}; i < channel_info_ref_table.count; ++i) {
             Reference channel_info_ref = channel_info_ref_table.items[i];
             reader.seek(channel_info_table_start + channel_info_ref.offset);
 
@@ -38,20 +37,18 @@ WaveInfo::WaveInfo(AudioReader& reader)
     }
 }
 
-DataBlock::DataBlock(AudioReader& reader)
-{
+DataBlock::DataBlock(AudioReader& reader) {
     header = reader.read<BlockHeader>();
     pcm16.resize((header.section_size / 2) - 4);
-    for (auto &sample : pcm16)
+    for (auto& sample : pcm16)
         sample = reader.read<uint16_t>();
 }
 
-WaveFile::WaveFile(AudioReader& reader)
-{
+WaveFile::WaveFile(AudioReader& reader) {
     size_t file_start = reader.tell();
     header = {reader};
 
-    for (auto &ref : header.block_refs) {
+    for (auto& ref : header.block_refs) {
         reader.seek(file_start + ref.offset);
         if (ref.type == 0x7000)
             info = {reader};
@@ -60,16 +57,14 @@ WaveFile::WaveFile(AudioReader& reader)
     }
 }
 
-std::vector<uint8_t> WaveFile::serialize()
-{
+std::vector<uint8_t> WaveFile::serialize() {
     AudioWriter writer;
 
     writer.write<AudioHeader>(header);
     for (auto& ref : header.block_refs) {
         writer.seek(ref.offset);
         switch (ref.type) {
-        case 0x7000:
-        {
+        case 0x7000: {
             writer.write<BlockHeader>(info.header);
             writer.write<Fstm::StreamInfo::Codec>(info.codec);
             writer.write<uint8_t>(info.loop_flag);
@@ -79,21 +74,21 @@ std::vector<uint8_t> WaveFile::serialize()
             writer.write<uint32_t>(info.sample_count);
             writer.write<uint32_t>(info.og_loop_start);
 
-            size_t ch_info_table_start {writer.tell()};
+            size_t ch_info_table_start{writer.tell()};
             writer.write_table<Reference>(info.channel_info_ref_table);
 
-            for (int i {0}; i<info.channel_info_ref_table.count; ++i) {
-                size_t to_ch_info {ch_info_table_start + info.channel_info_ref_table.items[i].offset};
+            for (int i{0}; i < info.channel_info_ref_table.count; ++i) {
+                size_t to_ch_info{ch_info_table_start +
+                                  info.channel_info_ref_table.items[i].offset};
                 writer.seek(to_ch_info);
                 writer.write<ChannelInfo>(info.channel_info_array[i]);
-                writer.seek(to_ch_info + info.channel_info_array[i].toAdpcmInfo.offset);
+                writer.seek(to_ch_info +
+                            info.channel_info_array[i].toAdpcmInfo.offset);
                 writer.write<Fstm::DspAdpcmInfo>(info.dsp_adpcm_info_array[i]);
             }
             break;
-
         }
-        case 0x7001:
-        {
+        case 0x7001: {
             writer.write<BlockHeader>(block.header);
             for (auto& sample : block.pcm16)
                 writer.write<int16_t>(sample);
@@ -106,4 +101,4 @@ std::vector<uint8_t> WaveFile::serialize()
 
     return writer.finalize();
 }
-} // NSound::Fwav
+} // namespace NSound::Fwav

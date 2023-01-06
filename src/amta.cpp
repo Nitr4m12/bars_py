@@ -1,46 +1,43 @@
 #include <array>
-#include <bars/amta.h>
-#include <bars/common.h>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
+
+#include <oead/util/swap.h>
 #include <oead/util/binary_reader.h>
-#include <cassert>
-#include "oead/util/swap.h"
+
+#include "bars/amta.h"
+#include "bars/common.h"
 
 namespace NSound::Amta {
-Strg::Strg(AudioReader& reader)
-{
+Strg::Strg(AudioReader& reader) {
     header = reader.read<BlockHeader>();
     asset_name = reader.read_string(header.section_size);
 }
 
-Ext_::Ext_(AudioReader& reader)
-{
+Ext_::Ext_(AudioReader& reader) {
     header = reader.read<BlockHeader>();
     entry_count = reader.read<uint32_t>();
 
     if (entry_count > 0) {
         ext_entries.resize(entry_count);
-        for (auto &entry: ext_entries)
+        for (auto& entry : ext_entries)
             entry = reader.read<ExtEntry>();
     }
-
 }
 
-Marker::Marker(AudioReader& reader)
-{
+Marker::Marker(AudioReader& reader) {
     header = reader.read<BlockHeader>();
     entry_count = reader.read<uint32_t>();
 
     if (entry_count > 0) {
         marker_infos.resize(entry_count);
-        for (auto &entry : marker_infos)
+        for (auto& entry : marker_infos)
             entry = reader.read<MarkerInfo>();
     }
 }
 
-AmtaFile::AmtaFile(AudioReader& reader)
-{
+AmtaFile::AmtaFile(AudioReader& reader) {
     size_t amta_start = reader.tell();
     header = reader.read<Header>();
 
@@ -54,13 +51,11 @@ AmtaFile::AmtaFile(AudioReader& reader)
 
     reader.seek(amta_start + header.strg_offset);
     strg = Strg{reader};
-
 }
 
-std::vector<uint8_t> AmtaFile::serialize()
-{
+std::vector<uint8_t> AmtaFile::serialize() {
     AudioWriter writer;
-    size_t amta_start {writer.tell()};
+    size_t amta_start{writer.tell()};
     writer.write<Header>(header);
 
     writer.seek(amta_start + header.data_offset);

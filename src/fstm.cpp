@@ -1,8 +1,7 @@
 #include "bars/fstm.h"
 
 namespace NSound::Fstm {
-InfoBlock::InfoBlock(AudioReader& reader)
-{
+InfoBlock::InfoBlock(AudioReader& reader) {
     header = reader.read<BlockHeader>();
 
     size_t ref_array_start = reader.tell();
@@ -33,7 +32,7 @@ InfoBlock::InfoBlock(AudioReader& reader)
         dsp_adpcm_info_array.resize(channel_info_table.count);
 
         if (channel_info_table.count > 0) {
-            for (int i {0}; i<channel_info_table.count; ++i) {
+            for (int i{0}; i < channel_info_table.count; ++i) {
                 Reference channel_info = channel_info_table.items[i];
                 reader.seek(channel_info_table_start + channel_info.offset);
 
@@ -47,4 +46,4 @@ InfoBlock::InfoBlock(AudioReader& reader)
         }
     }
 }
-}
+} // namespace NSound::Fstm

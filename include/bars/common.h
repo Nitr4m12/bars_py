@@ -1,9 +1,9 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <span>
 #include <string>
 #include <vector>
-#include <span>
 
 #include <oead/util/binary_reader.h>
 
@@ -29,7 +29,7 @@ struct SizedReference {
     uint32_t size;
 };
 
-template<typename T>
+template <typename T>
 struct Table {
     uint32_t count;
     std::vector<T> items;
@@ -54,34 +54,34 @@ struct AudioHeader {
 };
 
 class AudioReader {
-public:
-
+  public:
     AudioReader(std::span<uint8_t> data, oead::util::Endianness endian)
-        :reader{data, endian} {}
+        : reader{data, endian} {}
 
     template <typename T>
-    T read()
-        { return *reader.Read<T>(); }
+    T read() {
+        return *reader.Read<T>();
+    }
 
     template <typename T>
-    T read_at(size_t offset)
-        { return *reader.Read<T>(offset); }
+    T read_at(size_t offset) {
+        return *reader.Read<T>(offset);
+    }
 
-    std::string read_string(size_t max_len)
-        { return reader.ReadString(reader.Tell(), max_len); }
+    std::string read_string(size_t max_len) {
+        return reader.ReadString(reader.Tell(), max_len);
+    }
 
-    std::string read_string_at(size_t offset, size_t max_len)
-        { return reader.ReadString(offset, max_len); }
+    std::string read_string_at(size_t offset, size_t max_len) {
+        return reader.ReadString(offset, max_len);
+    }
 
-    void seek(size_t offset)
-        { reader.Seek(offset); }
+    void seek(size_t offset) { reader.Seek(offset); }
 
-    size_t tell() const
-        { return reader.Tell(); }
+    size_t tell() const { return reader.Tell(); }
 
-    template<typename T>
-    Table<T> read_table()
-    {
+    template <typename T>
+    Table<T> read_table() {
         Table<T> tbl;
         tbl.count = *reader.Read<uint32_t>();
         tbl.items.resize(tbl.count);
@@ -91,9 +91,8 @@ public:
         return tbl;
     }
 
-    template<typename T>
-    T read_reference(std::optional<size_t> offset = std::nullopt)
-    {
+    template <typename T>
+    T read_reference(std::optional<size_t> offset = std::nullopt) {
         // Read a struct referenced by a Reference. If an offset
         // is provided, use that as a starting point from where
         // to seek
@@ -116,8 +115,7 @@ public:
         return referenced;
     }
 
-    ReferenceTable read_ref_table()
-    {
+    ReferenceTable read_ref_table() {
         ReferenceTable ref_tbl;
         ref_tbl.count = *reader.Read<uint32_t>();
         ref_tbl.items.resize(ref_tbl.count);
@@ -127,50 +125,47 @@ public:
         return ref_tbl;
     }
 
-private:
+  private:
     oead::util::BinaryReader reader;
 };
 
 class AudioWriter {
-public:
+  public:
     AudioWriter() = default;
-    AudioWriter(oead::util::Endianness endian)
-        :writer{endian} {}
+    AudioWriter(oead::util::Endianness endian) : writer{endian} {}
 
-    template<typename T>
-    void write(T data)
-        { writer.Write<T>(data); }
+    template <typename T>
+    void write(T data) {
+        writer.Write<T>(data);
+    }
 
-    template<> void write<AudioHeader>(AudioHeader data);
+    template <>
+    void write<AudioHeader>(AudioHeader data);
 
     void write_cstr(std::string_view str) { writer.WriteCStr(str); }
 
     template <typename T>
-    void write_table(Table<T> data)
-    {
+    void write_table(Table<T> data) {
         write<uint32_t>(data.count);
         for (auto& item : data.items)
             write<T>(item);
     }
 
-    void align_up(size_t n)
-        { writer.AlignUp(n); }
+    void align_up(size_t n) { writer.AlignUp(n); }
 
-    void seek(size_t offset)
-        { writer.Seek(offset); }
+    void seek(size_t offset) { writer.Seek(offset); }
 
-    size_t tell() const
-        { return writer.Tell(); }
+    size_t tell() const { return writer.Tell(); }
 
-    std::vector<uint8_t> finalize()
-        { return writer.Finalize(); }
+    std::vector<uint8_t> finalize() { return writer.Finalize(); }
 
-private:
-    oead::util::BinaryWriter writer {oead::util::Endianness::Little};
+  private:
+    oead::util::BinaryWriter writer{oead::util::Endianness::Little};
 };
 
 void write_reference(oead::util::BinaryWriter& writer, Reference& ref);
-void write_sized_reference(oead::util::BinaryWriter& writer, SizedReference& sref);
+void write_sized_reference(oead::util::BinaryWriter& writer,
+                           SizedReference& sref);
 void write_audio_header(oead::util::BinaryWriter& writer, AudioHeader& header);
 
 } // namespace NSound

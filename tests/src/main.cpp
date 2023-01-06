@@ -14,9 +14,6 @@
 
 int main(int argc, char **argv)
 {
-    // TODO: Add a function to read references, and return the struct
-    // TODO: Fix FSTP saving. Probably with the above.
-
     // 1. Parse file
     std::ifstream ifs {argv[1]};
     std::vector<uint8_t> buffer(std::filesystem::file_size(argv[1]));
@@ -33,4 +30,10 @@ int main(int argc, char **argv)
     buffer = bars.serialize();
     std::ofstream ofs {"test.bars"};
     ofs.write((char*)buffer.data(), buffer.size());
+
+    // 3. Get file
+    NSound::Bars::BarsFile::FileWithMetadata file {bars.get_file("WallRock_Break")};
+    std::cout << "File " << file.audio.index() << " was found!" << '\n';
+
+
 }

@@ -1,13 +1,12 @@
-#include <fstream>
-#include <filesystem>
-#include <stdexcept>
 #include <cassert>
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
 
 #include <bars/bars.h>
 
 namespace NSound::Bars {
-ResourceHeader::ResourceHeader(AudioReader& reader)
-{
+ResourceHeader::ResourceHeader(AudioReader& reader) {
     signature = reader.read<typeof(signature)>();
     file_size = reader.read<uint32_t>();
     bom = reader.read<uint16_t>();
@@ -17,34 +16,34 @@ ResourceHeader::ResourceHeader(AudioReader& reader)
     crc32hashes.resize(asset_count);
     file_entries.resize(asset_count);
 
-    for (auto &hash : crc32hashes)
+    for (auto& hash : crc32hashes)
         hash = reader.read<uint32_t>();
 
-    for (auto &entry : file_entries) {
+    for (auto& entry : file_entries) {
         entry.amta_offset = reader.read<uint32_t>();
         entry.asset_offset = reader.read<uint32_t>();
     }
 }
 
-BarsFile::BarsFile(AudioReader& reader)
-    :mHeader{reader}
-{
+BarsFile::BarsFile(AudioReader& reader) : mHeader{reader} {
 
     {
         // Check
         ResourceHeader def;
 
-        if (mHeader.signature != def.signature) throw std::runtime_error("Invalid header!");
-        if (mHeader.bom != VALID_BOM) throw std::runtime_error("Invalid Byte-Order Mark");
+        if (mHeader.signature != def.signature)
+            throw std::runtime_error("Invalid header!");
+        if (mHeader.bom != VALID_BOM)
+            throw std::runtime_error("Invalid Byte-Order Mark");
     }
 
     mFiles.resize(mHeader.asset_count);
-    for (int i {0}; i<mHeader.asset_count; ++i) {
+    for (int i{0}; i < mHeader.asset_count; ++i) {
         reader.seek(mHeader.file_entries[i].amta_offset);
         mFiles[i].metadata = {reader};
 
         reader.seek(mHeader.file_entries[i].asset_offset);
-        std::string sign {reader.read_string(4)};
+        std::string sign{reader.read_string(4)};
 
         reader.seek(mHeader.file_entries[i].asset_offset);
         if (sign == "FSTP")
@@ -56,8 +55,7 @@ BarsFile::BarsFile(AudioReader& reader)
     }
 }
 
-std::vector<uint8_t> BarsFile::serialize()
-{
+std::vector<uint8_t> BarsFile::serialize() {
     AudioWriter writer;
 
     writer.write<typeof(mHeader.signature)>(mHeader.signature);
@@ -72,19 +70,18 @@ std::vector<uint8_t> BarsFile::serialize()
     for (auto& file_entry : mHeader.file_entries)
         writer.write<ResourceHeader::FileEntry>(file_entry);
 
-    for (int i {0}; i<mFiles.size(); ++i) {
+    for (int i{0}; i < mFiles.size(); ++i) {
         std::vector<uint8_t> amta_bytes = mFiles[i].metadata.serialize();
         std::vector<uint8_t> asset_bytes;
         switch (mFiles[i].metadata.data.type) {
-        case Amta::Data::Type::Wave:
-        {
+        case Amta::Data::Type::Wave: {
             Fwav::WaveFile fwav = std::get<Fwav::WaveFile>(mFiles[i].audio);
             asset_bytes = fwav.serialize();
             break;
         }
-        case Amta::Data::Type::Stream:
-        {
-            Fstp::PrefetchFile fstp = std::get<Fstp::PrefetchFile>(mFiles[i].audio);
+        case Amta::Data::Type::Stream: {
+            Fstp::PrefetchFile fstp =
+                std::get<Fstp::PrefetchFile>(mFiles[i].audio);
             asset_bytes = fstp.serialize();
             break;
         }
@@ -102,7 +99,6 @@ std::vector<uint8_t> BarsFile::serialize()
     }
 
     return writer.finalize();
-
 }
 
-} // namespace Bars
+} // namespace NSound::Bars
