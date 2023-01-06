@@ -25,14 +25,17 @@ ResourceHeader::ResourceHeader(AudioReader& reader) {
     }
 }
 
-BarsFile::BarsFile(std::vector<uint8_t> buffer) : mReader{buffer} {
+BarsFile::BarsFile(std::vector<uint8_t> buffer) {
+    AudioReader reader {buffer};
 
-    mHeader = {mReader};
+    mHeader = {reader};
     if (mHeader.bom == 0xFFFE) {
-        mReader.swap_endian();
-        mReader.seek(0);
-        mHeader = {mReader};
+        reader.swap_endian();
+        reader.seek(0);
+        mHeader = {reader};
     }
+
+    endianness = reader.endian();
 
     {
         // Check
@@ -46,26 +49,26 @@ BarsFile::BarsFile(std::vector<uint8_t> buffer) : mReader{buffer} {
 
     mFiles.resize(mHeader.asset_count);
     for (int i{0}; i < mHeader.asset_count; ++i) {
-        mReader.seek(mHeader.file_entries[i].amta_offset);
-        mFiles[i].metadata = {buffer.begin() + mReader.tell(), buffer.end()};
+        reader.seek(mHeader.file_entries[i].amta_offset);
+        mFiles[i].metadata = {buffer.begin() + reader.tell(), buffer.end()};
 
-        mReader.seek(mHeader.file_entries[i].asset_offset);
-        std::string sign{mReader.read_string(4)};
+        reader.seek(mHeader.file_entries[i].asset_offset);
+        std::string sign{reader.read_string(4)};
 
-        mReader.seek(mHeader.file_entries[i].asset_offset);
+        reader.seek(mHeader.file_entries[i].asset_offset);
         if (sign == "FSTP")
             mFiles[i].audio = Fstp::PrefetchFile{
-                buffer.begin() + mReader.tell(), buffer.end()};
+                buffer.begin() + reader.tell(), buffer.end()};
         else if (sign == "FWAV")
             mFiles[i].audio =
-                Fwav::WaveFile{buffer.begin() + mReader.tell(), buffer.end()};
+                Fwav::WaveFile{buffer.begin() + reader.tell(), buffer.end()};
         else
             throw std::runtime_error("Invalid asset header");
     }
 }
 
 std::vector<uint8_t> BarsFile::serialize() {
-    AudioWriter writer{mReader.endian()};
+    AudioWriter writer{endianness};
 
     writer.write<typeof(mHeader.signature)>(mHeader.signature);
     writer.write<uint32_t>(mHeader.file_size);

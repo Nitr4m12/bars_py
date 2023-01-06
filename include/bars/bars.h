@@ -50,6 +50,8 @@ struct ResourceHeader {
 
 class BarsFile {
 public:
+    oead::util::Endianness endianness;
+
     BarsFile(std::vector<uint8_t> buffer);
 
     std::vector<uint8_t> serialize();
@@ -70,7 +72,6 @@ public:
     }
 
 private:
-    AudioReader mReader;
     ResourceHeader mHeader;
     std::vector<FileWithMetadata> mFiles;
 

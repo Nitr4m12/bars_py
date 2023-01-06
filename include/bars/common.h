@@ -54,7 +54,6 @@ struct AudioHeader {
 
 class AudioReader {
 public:
-    AudioReader() = default;
     AudioReader(std::span<uint8_t> data)
         : reader{data, oead::util::Endianness::Little} {}
     AudioReader(std::span<uint8_t> data, oead::util::Endianness endian)
