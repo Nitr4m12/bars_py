@@ -52,7 +52,7 @@ class BarsFile {
 public:
     oead::util::Endianness endianness;
 
-    BarsFile(std::vector<uint8_t> buffer);
+    BarsFile(std::vector<uint8_t>& buffer);
 
     std::vector<uint8_t> serialize();
 

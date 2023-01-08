@@ -25,7 +25,7 @@ ResourceHeader::ResourceHeader(AudioReader& reader) {
     }
 }
 
-BarsFile::BarsFile(std::vector<uint8_t> buffer) {
+BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
     AudioReader reader {buffer};
 
     mHeader = {reader};
