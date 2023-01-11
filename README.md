@@ -1,5 +1,5 @@
 # EXPERIMENTAL
-This branch is for the experimental cpp rewrite. As of now, it's mostly stable but untested.
+This branch is for the experimental cpp rewrite. Right now it's mostly stable but untested.
 
 # bars-py
 Code based on [BCFSTM-BCFWAV-Converter](https://github.com/aboood40091/BCFSTM-BCFWAV-Converter), [bars_extractor.py](https://gist.github.com/SamusAranX/6eb8b6fd1777b17afc3107a979c2409a#file-bars_extractor-py) and [bfstp-fixer](https://github.com/NanobotZ/bfstp-fixer)
