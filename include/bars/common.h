@@ -1,12 +1,13 @@
 #include <array>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
 
 #include <binaryio/reader.h>
-#include <oead/util/binary_reader.h>
+#include <binaryio/writer.h>
 
 
 #ifndef NSOUND_COMMON_H
@@ -106,20 +107,12 @@ public:
     }
 };
 
-class AudioWriter {
+class AudioWriter : public binaryio::BinaryWriter {
 public:
-    AudioWriter() = default;
-    AudioWriter(oead::util::Endianness endian) : writer{endian} {}
+    AudioWriter(binaryio::endian endianness)
+        : binaryio::BinaryWriter{endianness} {}
 
-    template <typename T>
-    void write(T data) {
-        writer.Write<T>(data);
-    }
-
-    template <>
-    void write<AudioHeader>(AudioHeader data);
-
-    void write_cstr(std::string_view str) { writer.WriteCStr(str); }
+    void write_audio_header(AudioHeader header);
 
     template <typename T>
     void write_table(Table<T> data) {
@@ -127,26 +120,7 @@ public:
         for (auto& item : data.items)
             write<T>(item);
     }
-
-    void align_up(size_t n) { writer.AlignUp(n); }
-
-    void seek(size_t offset) { writer.Seek(offset); }
-
-    size_t tell() const { return writer.Tell(); }
-
-    oead::util::Endianness endian() const { return writer.Endian(); };
-
-    std::vector<uint8_t> finalize() { return writer.Finalize(); }
-
-private:
-    oead::util::BinaryWriter writer{oead::util::Endianness::Little};
 };
-
-void write_reference(oead::util::BinaryWriter& writer, Reference& ref);
-void write_sized_reference(oead::util::BinaryWriter& writer,
-                           SizedReference& sref);
-void write_audio_header(oead::util::BinaryWriter& writer, AudioHeader& header);
-
 } // namespace NSound
 
 #endif

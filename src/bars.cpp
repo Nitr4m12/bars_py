@@ -67,7 +67,7 @@ BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
 }
 
 std::vector<uint8_t> BarsFile::serialize() {
-    AudioWriter writer{(oead::util::Endianness)endianness};
+    AudioWriter writer{endianness};
 
     writer.write<typeof(mHeader.signature)>(mHeader.signature);
     writer.write<uint32_t>(mHeader.file_size);

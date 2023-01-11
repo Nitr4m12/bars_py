@@ -64,7 +64,7 @@ AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
 }
 
 std::vector<uint8_t> AmtaFile::serialize() {
-    AudioWriter writer{(oead::util::Endianness)endianness};
+    AudioWriter writer{endianness};
 
     size_t amta_start{writer.tell()};
     writer.write<Header>(header);

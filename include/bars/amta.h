@@ -24,7 +24,7 @@ struct Data {
     uint8_t wave_channels{0};
     uint8_t used_stream_tracks{0}; // Up to 8
     uint8_t flags{0};
-    float volume{static_cast<float>(0x3d5e2dc2)};
+    uint32_t duration{0};
     uint32_t sample_rate{48000};
     uint32_t loop_start_sample{0};
     uint32_t loop_end_sample{0};

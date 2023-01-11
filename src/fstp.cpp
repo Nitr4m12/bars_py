@@ -57,9 +57,9 @@ PrefetchFile::PrefetchFile(std::vector<uint8_t>::iterator begin,
 }
 
 std::vector<uint8_t> PrefetchFile::serialize() {
-    AudioWriter writer{(oead::util::Endianness)endianness};
+    AudioWriter writer{endianness};
 
-    writer.write<AudioHeader>(header);
+    writer.write_audio_header(header);
     for (auto& ref : header.block_refs) {
         writer.seek(ref.offset);
         switch (ref.type) {

@@ -33,31 +33,16 @@ AudioHeader::AudioHeader(AudioReader& reader) {
         block_ref = reader.read<NSound::SizedReference>();
 }
 
-template <>
-void AudioWriter::write<AudioHeader>(AudioHeader data) {
-    writer.Write(data.signature);
-    writer.Write<uint16_t>(VALID_BOM);
-    writer.Write<uint16_t>(data.head_size);
-    writer.Write<uint32_t>(data.version);
-    writer.Write<uint32_t>(data.file_size);
-    writer.Write<uint16_t>(data.block_count);
-    writer.Write<uint16_t>(data.reserved);
+void AudioWriter::write_audio_header(AudioHeader header) {
+    write(header.signature);
+    write<uint16_t>(VALID_BOM);
+    write<uint16_t>(header.head_size);
+    write<uint32_t>(header.version);
+    write<uint32_t>(header.file_size);
+    write<uint16_t>(header.block_count);
+    write<uint16_t>(header.reserved);
 
-    for (auto& block_ref : data.block_refs)
-        writer.Write<SizedReference>(block_ref);
-}
-
-void write_reference(oead::util::BinaryWriter& writer, Reference& ref) {
-    writer.Write<uint16_t>(ref.type);
-    writer.Seek(writer.Tell() + 2);
-    writer.Write<uint32_t>(ref.offset);
-}
-
-void write_sized_reference(oead::util::BinaryWriter& writer,
-                           SizedReference& sref) {
-    writer.Write<uint16_t>(sref.type);
-    writer.Seek(writer.Tell() + 2);
-    writer.Write<uint32_t>(sref.offset);
-    writer.Write<uint32_t>(sref.size);
+    for (auto& block_ref : header.block_refs)
+        write<SizedReference>(block_ref);
 }
 } // namespace NSound
