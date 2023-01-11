@@ -12,6 +12,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(oead)
 
+FetchContent_Declare(
+    binaryio
+    GIT_REPOSITORY https://gitlab.com/Nitr4m12/simple-binaryio
+)
+FetchContent_MakeAvailable(binaryio)
+
 add_library(bars
     include/bars/bars.h
     include/bars/amta.h
@@ -34,6 +40,7 @@ target_include_directories(bars
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(bars oead)
+target_link_libraries(bars binaryio)
 target_compile_features(bars PUBLIC cxx_std_20)
 
 enable_testing()

@@ -44,7 +44,7 @@ struct WaveFile {
     WaveInfo info;
     DataBlock block;
 
-    oead::util::Endianness endianness;
+    binaryio::endian endianness;
 
     WaveFile() = default;
     WaveFile(std::vector<uint8_t>::iterator begin,

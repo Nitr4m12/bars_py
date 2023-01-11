@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
+#include <binaryio/reader.h>
 #include <oead/util/binary_reader.h>
+
 
 #ifndef NSOUND_COMMON_H
 #define NSOUND_COMMON_H
@@ -52,43 +54,19 @@ struct AudioHeader {
     AudioHeader(AudioReader& reader);
 };
 
-class AudioReader {
+class AudioReader : public binaryio::BinaryReader {
 public:
-    AudioReader(std::span<uint8_t> data)
-        : reader{data, oead::util::Endianness::Little} {}
-    AudioReader(std::span<uint8_t> data, oead::util::Endianness endian)
-        : reader{data, endian} {}
 
-    template <typename T>
-    T read() {
-        return *reader.Read<T>();
-    }
-
-    template <typename T>
-    T read_at(size_t offset) {
-        return *reader.Read<T>(offset);
-    }
-
-    std::string read_string(size_t max_len) {
-        return reader.ReadString(reader.Tell(), max_len);
-    }
-
-    std::string read_string_at(size_t offset, size_t max_len) {
-        return reader.ReadString(offset, max_len);
-    }
-
-    std::span<const uint8_t> data() const { return reader.span(); }
-    void seek(size_t offset) { reader.Seek(offset); }
-
-    size_t tell() const { return reader.Tell(); }
+    AudioReader(void* const begin, void* const end)
+        : binaryio::BinaryReader(begin, end) {}
 
     template <typename T>
     Table<T> read_table() {
         Table<T> tbl;
-        tbl.count = *reader.Read<uint32_t>();
+        tbl.count = read<uint32_t>();
         tbl.items.resize(tbl.count);
         for (auto& item : tbl.items)
-            item = *reader.Read<T>();
+            item = read<T>();
 
         return tbl;
     }
@@ -101,43 +79,31 @@ public:
 
         Reference ref;
         size_t start_offset;
-        size_t return_offset = reader.Tell();
+        size_t return_offset = tell();
         if (offset)
             start_offset = *offset;
         else
             start_offset = return_offset;
 
         ref = read<Reference>();
-        reader.Seek(start_offset + ref.offset);
+        seek(start_offset + ref.offset);
 
         T referenced = read<T>();
 
-        reader.Seek(return_offset + sizeof(Reference));
+        seek(return_offset + sizeof(Reference));
 
         return referenced;
     }
 
     ReferenceTable read_ref_table() {
         ReferenceTable ref_tbl;
-        ref_tbl.count = *reader.Read<uint32_t>();
+        ref_tbl.count = read<uint32_t>();
         ref_tbl.items.resize(ref_tbl.count);
         for (auto& item : ref_tbl.items)
-            item = *reader.Read<Reference>();
+            item = read<Reference>();
 
         return ref_tbl;
     }
-
-    void swap_endian() {
-        if (reader.Endian() == oead::util::Endianness::Little)
-            reader.SetEndian(oead::util::Endianness::Big);
-        else
-            reader.SetEndian(oead::util::Endianness::Little);
-    }
-
-    oead::util::Endianness endian() const { return reader.Endian(); }
-
-private:
-    oead::util::BinaryReader reader;
 };
 
 class AudioWriter {

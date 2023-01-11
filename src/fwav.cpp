@@ -47,16 +47,16 @@ DataBlock::DataBlock(AudioReader& reader) {
 WaveFile::WaveFile(std::vector<uint8_t>::iterator begin,
                    std::vector<uint8_t>::iterator end) {
 
-    AudioReader reader{{begin, end}};
+    AudioReader reader{begin.base(), end.base()};
 
     header = {reader};
     if (header.bom == 0xFFFE) {
-        reader.swap_endian();
+        reader.swap_endianness();
         reader.seek(0);
         header = {reader};
     }
 
-    endianness = reader.endian();
+    endianness = reader.endianness();
 
     for (auto& ref : header.block_refs) {
         reader.seek(ref.offset);
@@ -68,7 +68,7 @@ WaveFile::WaveFile(std::vector<uint8_t>::iterator begin,
 }
 
 std::vector<uint8_t> WaveFile::serialize() {
-    AudioWriter writer{endianness};
+    AudioWriter writer{(oead::util::Endianness)endianness};
 
     writer.write<AudioHeader>(header);
     for (auto& ref : header.block_refs) {

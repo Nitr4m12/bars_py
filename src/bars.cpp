@@ -1,6 +1,5 @@
 #include <cassert>
 #include <filesystem>
-#include <fstream>
 #include <stdexcept>
 
 #include <bars/bars.h>
@@ -26,16 +25,16 @@ ResourceHeader::ResourceHeader(AudioReader& reader) {
 }
 
 BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
-    AudioReader reader {buffer};
+    AudioReader reader {buffer.begin().base(), buffer.end().base()};
 
     mHeader = {reader};
     if (mHeader.bom == 0xFFFE) {
-        reader.swap_endian();
+        reader.swap_endianness();
         reader.seek(0);
         mHeader = {reader};
     }
 
-    endianness = reader.endian();
+    endianness = reader.endianness();
 
     {
         // Check
@@ -68,7 +67,7 @@ BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
 }
 
 std::vector<uint8_t> BarsFile::serialize() {
-    AudioWriter writer{endianness};
+    AudioWriter writer{(oead::util::Endianness)endianness};
 
     writer.write<typeof(mHeader.signature)>(mHeader.signature);
     writer.write<uint32_t>(mHeader.file_size);

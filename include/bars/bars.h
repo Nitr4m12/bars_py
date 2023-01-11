@@ -50,7 +50,7 @@ struct ResourceHeader {
 
 class BarsFile {
 public:
-    oead::util::Endianness endianness;
+    binaryio::endian endianness;
 
     BarsFile(std::vector<uint8_t>& buffer);
 

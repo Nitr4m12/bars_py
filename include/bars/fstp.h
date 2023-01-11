@@ -33,7 +33,7 @@ struct PrefetchFile {
     Fstm::InfoBlock info;
     PrefetchDataBlock pdat;
 
-    oead::util::Endianness endianness;
+    binaryio::endian endianness;
 
     PrefetchFile() = default;
     PrefetchFile(std::vector<uint8_t>::iterator begin,

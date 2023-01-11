@@ -99,7 +99,7 @@ struct AmtaFile {
     Ext_ ext;
     Strg strg;
 
-    oead::util::Endianness endianness;
+    binaryio::endian endianness;
 
     AmtaFile() = default;
     AmtaFile(std::vector<uint8_t>::iterator begin,

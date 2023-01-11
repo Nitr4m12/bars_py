@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <oead/util/binary_reader.h>
 #include <oead/util/swap.h>
 
 #include "bars/amta.h"
@@ -40,18 +39,19 @@ Marker::Marker(AudioReader& reader) {
 AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
                    std::vector<uint8_t>::iterator end) {
 
-    AudioReader reader{{begin, end}};
+    AudioReader reader{begin.base(), end.base()};
 
     header = reader.read<Header>();
     if (header.bom == 0xFFFE) {
-        reader.swap_endian();
+        reader.swap_endianness();
         reader.seek(0);
         header = reader.read<Header>();
     }
 
-    endianness = reader.endian();
+    endianness = reader.endianness();
 
-    data = reader.read_at<Data>(header.data_offset);
+    reader.seek(header.data_offset);
+    data = reader.read<Data>();
 
     reader.seek(header.marker_offset);
     marker = Marker{reader};
@@ -64,7 +64,7 @@ AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
 }
 
 std::vector<uint8_t> AmtaFile::serialize() {
-    AudioWriter writer{endianness};
+    AudioWriter writer{(oead::util::Endianness)endianness};
 
     size_t amta_start{writer.tell()};
     writer.write<Header>(header);
