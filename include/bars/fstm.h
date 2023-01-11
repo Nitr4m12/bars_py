@@ -41,14 +41,39 @@ struct StreamInfo {
 
 struct DspContext {
     uint16_t predictor_scale{0};
-    uint16_t pre_sample{0};
-    uint16_t pre_sample2{0};
+    int16_t pre_sample{0};
+    int16_t pre_sample2{0};
 };
 
 struct DspAdpcmInfo {
     std::array<uint16_t, 16> coefficients;
     DspContext context;
     DspContext loop_context;
+};
+
+struct HistoryInfo {
+    int16_t yn1;
+    int16_t yn2;
+};
+
+struct RegionInfo {
+    uint32_t start;
+    uint32_t end;
+
+    // DspContext [number of channels]
+    std::vector<DspContext> loop_info;
+};
+
+struct RegionBlock {
+    BlockHeader header{{'R', 'E', 'G', 'N',}, 0x100};
+    RegionInfo region_info;
+};
+
+struct SeekBlock {
+    BlockHeader header{{'S', 'E', 'E', 'K',}, 0x100};
+
+    // History [number of blocks][number of channels]
+    std::vector<std::vector<HistoryInfo>> history;
 };
 
 struct InfoBlock {
@@ -67,5 +92,18 @@ struct InfoBlock {
     InfoBlock() = default;
     InfoBlock(AudioReader& reader);
 };
+
+struct StreamData {
+    BlockHeader header {{'D', 'A', 'T', 'A'}, 0x0};
+    std::vector<uint8_t> sample_data;
+};
+
+struct StreamFile {
+    AudioHeader header;
+    InfoBlock info;
+    SeekBlock seek;
+    RegionBlock region;
+};
+
 } // namespace NSound::Fstm
 #endif

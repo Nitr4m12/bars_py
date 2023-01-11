@@ -1,8 +1,6 @@
 #include <array>
 #include <cstdint>
 
-#include <oead/util/binary_reader.h>
-
 #include "bars/common.h"
 #include "bars/fstm.h"
 

@@ -1,5 +1,3 @@
-#include <cassert>
-#include <filesystem>
 #include <stdexcept>
 
 #include <bars/bars.h>

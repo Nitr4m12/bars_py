@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include <bars/fwav.h>
-#include <oead/util/binary_reader.h>
 
 namespace NSound::Fwav {
 WaveInfo::WaveInfo(AudioReader& reader) {

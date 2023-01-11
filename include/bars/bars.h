@@ -17,7 +17,6 @@
 #include <variant>
 #include <vector>
 
-#include <oead/util/binary_reader.h>
 #include <oead/util/hash.h>
 
 #include "bars/amta.h"

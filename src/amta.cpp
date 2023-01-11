@@ -1,10 +1,3 @@
-#include <array>
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-
-#include <oead/util/swap.h>
-
 #include "bars/amta.h"
 #include "bars/common.h"
 

@@ -1,13 +1,7 @@
-#include <cassert>
-
-#include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <stdexcept>
 
 #include "bars/fstp.h"
-#include "oead/util/binary_reader.h"
-#include "oead/util/swap.h"
 
 namespace NSound::Fstp {
 PrefetchDataBlock::PrefetchDataBlock(AudioReader& reader) {
@@ -130,11 +124,4 @@ std::vector<uint8_t> PrefetchFile::serialize() {
 
     return writer.finalize();
 }
-
-std::vector<uint8_t> write(PrefetchFile& fstp) {
-    oead::util::BinaryWriter writer{oead::util::Endianness::Little};
-    writer.AlignUp(0x20);
-    return writer.Finalize();
-}
-
 } // namespace NSound::Fstp
