@@ -19,17 +19,23 @@ constexpr int VALID_BOM = 0xFEFF;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
     uint32_t section_size;
+
+    BINARYIO_DEFINE_FIELDS(BlockHeader, signature, section_size);
 };
 
 struct Reference {
     uint16_t type;
     int32_t offset;
+
+    BINARYIO_DEFINE_FIELDS(Reference, type, offset);
 };
 
 struct SizedReference {
     uint16_t type;
     int32_t offset;
     uint32_t size;
+
+    BINARYIO_DEFINE_FIELDS(SizedReference, type, offset, size);
 };
 
 template <typename T>

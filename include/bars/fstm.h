@@ -12,6 +12,8 @@ struct TrackInfo {
     uint8_t pan{0};
     uint8_t span{0};
     uint8_t flags{0};
+
+    BINARYIO_DEFINE_FIELDS(TrackInfo, volume, pan, span, flags);
 };
 
 struct StreamInfo {
@@ -37,18 +39,30 @@ struct StreamInfo {
     uint16_t region_info_size{0};
     uint8_t padding[2]{0, 0};
     Reference region_ref{0x4003, 0};
+
+    BINARYIO_DEFINE_FIELDS(StreamInfo, codec, is_loop, channel_count,
+                           region_count, sample_rate, loop_start, sample_count,
+                           block_count, block_size, block_sample_count,
+                           last_block_size, last_block_sample_count,
+                           last_block_padding_size, seek_size, sisc,
+                           to_sample_data);
 };
 
 struct DspContext {
     uint16_t predictor_scale{0};
     int16_t pre_sample{0};
     int16_t pre_sample2{0};
+
+    BINARYIO_DEFINE_FIELDS(DspContext, predictor_scale, pre_sample,
+                           pre_sample2);
 };
 
 struct DspAdpcmInfo {
     std::array<uint16_t, 16> coefficients;
     DspContext context;
     DspContext loop_context;
+
+    BINARYIO_DEFINE_FIELDS(DspAdpcmInfo, coefficients, context, loop_context);
 };
 
 struct HistoryInfo {
@@ -65,12 +79,12 @@ struct RegionInfo {
 };
 
 struct RegionBlock {
-    BlockHeader header{{'R', 'E', 'G', 'N',}, 0x100};
+    BlockHeader header{{'R','E','G','N'},0x100};
     RegionInfo region_info;
 };
 
 struct SeekBlock {
-    BlockHeader header{{'S', 'E', 'E', 'K',}, 0x100};
+    BlockHeader header{{'S','E','E','K'},0x100};
 
     // History [number of blocks][number of channels]
     std::vector<std::vector<HistoryInfo>> history;
@@ -94,7 +108,7 @@ struct InfoBlock {
 };
 
 struct StreamData {
-    BlockHeader header {{'D', 'A', 'T', 'A'}, 0x0};
+    BlockHeader header{{'D', 'A', 'T', 'A'}, 0x0};
     std::vector<uint8_t> sample_data;
 };
 

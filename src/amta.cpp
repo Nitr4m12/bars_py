@@ -43,6 +43,7 @@ AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
 
     endianness = reader.endianness();
 
+
     reader.seek(header.data_offset);
     data = reader.read<Data>();
 
@@ -60,23 +61,30 @@ std::vector<uint8_t> AmtaFile::serialize() {
     AudioWriter writer{endianness};
 
     size_t amta_start{writer.tell()};
-    writer.write<Header>(header);
+    writer.write(header.signature);
+    writer.write(header.bom);
+    writer.write(header.version);
+    writer.write(header.file_size);
+    writer.write(header.data_offset);
+    writer.write(header.marker_offset);
+    writer.write(header.ext_offset);
+    writer.write(header.strg_offset);
 
     writer.seek(amta_start + header.data_offset);
-    writer.write<Data>(data);
+    writer.write(data);
 
     writer.seek(amta_start + header.marker_offset);
-    writer.write<BlockHeader>(marker.header);
+    writer.write(marker.header);
     for (auto& marker_info : marker.marker_infos)
-        writer.write<Marker::MarkerInfo>(marker_info);
+        writer.write(marker_info);
 
     writer.seek(amta_start + header.ext_offset);
-    writer.write<BlockHeader>(ext.header);
+    writer.write(ext.header);
     for (auto& entry : ext.ext_entries)
-        writer.write<Ext_::ExtEntry>(entry);
+        writer.write(entry);
 
     writer.seek(amta_start + header.strg_offset);
-    writer.write<BlockHeader>(strg.header);
+    writer.write(strg.header);
     writer.write_cstr(strg.asset_name);
 
     return writer.finalize();

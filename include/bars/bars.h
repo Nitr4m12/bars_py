@@ -39,40 +39,43 @@ struct ResourceHeader {
     struct FileEntry {
         uint32_t amta_offset;
         uint32_t asset_offset;
+        BINARYIO_DEFINE_FIELDS(FileEntry, amta_offset, asset_offset);
     };
     // size = this.asset_count; same order as the CRC32 hashes
     std::vector<FileEntry> file_entries;
 
     ResourceHeader() = default;
-    ResourceHeader(AudioReader& reader);
+    void init(AudioReader& reader);
 };
 
 class BarsFile {
 public:
-    binaryio::endian endianness;
-
-    BarsFile(std::vector<uint8_t>& buffer);
-
-    std::vector<uint8_t> serialize();
-
     struct FileWithMetadata {
         Amta::AmtaFile metadata;
         std::variant<Fstp::PrefetchFile, Fwav::WaveFile> audio;
     };
 
-    std::vector<FileWithMetadata> get_files() { return mFiles; }
-    FileWithMetadata get_file(int idx) { return mFiles[idx]; }
+    BarsFile(std::vector<uint8_t>& buffer);
+
+    void swap_endianness();
+    std::vector<uint8_t> serialize();
+
+    std::vector<FileWithMetadata> get_files() { return m_files; }
+
+    FileWithMetadata get_file(int idx) { return m_files[idx]; }
+
     FileWithMetadata get_file(std::string name) {
         uint32_t hash{oead::util::crc32(name)};
-        int idx{lookup(mHeader.crc32hashes, hash)};
+        int idx{lookup(m_header.crc32hashes, hash)};
         if (idx < 0)
             throw std::runtime_error("BarsFile: File not found");
-        return mFiles[idx];
+        return m_files[idx];
     }
 
 private:
-    ResourceHeader mHeader;
-    std::vector<FileWithMetadata> mFiles;
+    ResourceHeader m_header;
+    std::vector<FileWithMetadata> m_files;
+    binaryio::endian endianness;
 
     static int lookup(std::vector<uint32_t> hashes, int key) {
         int first{0};

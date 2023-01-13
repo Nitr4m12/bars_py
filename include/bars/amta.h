@@ -33,11 +33,17 @@ struct Data {
     struct StreamTrack {
         uint32_t channel_count{0};
         float volume{0x3f800000};
+        BINARYIO_DEFINE_FIELDS(StreamTrack, channel_count, volume);
     };
     std::array<StreamTrack, 8> stream_tracks;
 
     float amplitude_peak{
         static_cast<float>(0x4b52414d)}; // Only in Version 4.0!!!!!
+
+    BINARYIO_DEFINE_FIELDS(Data, header, asset_name_offset, sample_count, type,
+                           wave_channels, used_stream_tracks, flags, duration,
+                           sample_rate, loop_start_sample, loop_end_sample,
+                           loudness, stream_tracks, amplitude_peak);
 } __attribute__((packed));
 
 struct Marker {
@@ -57,7 +63,7 @@ struct Marker {
 
     Marker() = default;
     Marker(AudioReader& reader);
-} __attribute__((packed));
+};
 
 struct Ext_ {
     BlockHeader header{{'E', 'X', 'T', '_'}, 0x4};
@@ -70,7 +76,7 @@ struct Ext_ {
 
     Ext_() = default;
     Ext_(AudioReader& reader);
-} __attribute__((packed));
+};
 
 struct Strg {
     BlockHeader header;
@@ -90,6 +96,9 @@ struct Header {
     uint32_t marker_offset{0};
     uint32_t ext_offset{0};
     uint32_t strg_offset{0};
+
+    BINARYIO_DEFINE_FIELDS(Header, signature, bom, version, file_size,
+                           data_offset, marker_offset, ext_offset, strg_offset);
 };
 
 struct AmtaFile {

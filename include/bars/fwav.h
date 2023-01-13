@@ -18,9 +18,11 @@ struct DataBlock {
 };
 
 struct ChannelInfo {
-    Reference intoSampleData;
-    Reference toAdpcmInfo;
+    Reference into_sample_data;
+    Reference to_adpcm_info;
     uint32_t reserved;
+
+    BINARYIO_DEFINE_FIELDS(ChannelInfo, into_sample_data, to_adpcm_info, reserved);
 };
 
 struct WaveInfo {

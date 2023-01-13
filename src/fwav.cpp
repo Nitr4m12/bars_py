@@ -30,7 +30,7 @@ WaveInfo::WaveInfo(AudioReader& reader) {
 
             channel_info_array[i] = channel_info;
 
-            reader.seek(current_offset + channel_info.toAdpcmInfo.offset);
+            reader.seek(current_offset + channel_info.to_adpcm_info.offset);
             dsp_adpcm_info_array[i] = reader.read<Fstm::DspAdpcmInfo>();
         }
     }
@@ -92,7 +92,7 @@ std::vector<uint8_t> WaveFile::serialize() {
                 writer.seek(to_ch_info);
                 writer.write<ChannelInfo>(info.channel_info_array[i]);
                 writer.seek(to_ch_info +
-                            info.channel_info_array[i].toAdpcmInfo.offset);
+                            info.channel_info_array[i].to_adpcm_info.offset);
                 writer.write<Fstm::DspAdpcmInfo>(info.dsp_adpcm_info_array[i]);
             }
             break;

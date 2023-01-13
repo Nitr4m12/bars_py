@@ -15,6 +15,9 @@ struct PrefetchData {
 
     // offset is relative to the start of the PrefetchData
     Reference to_prefetch_samples;
+
+    BINARYIO_DEFINE_FIELDS(PrefetchData, start_frame, prefetch_size, reserved,
+                           to_prefetch_samples);
 };
 
 struct PrefetchDataBlock {
