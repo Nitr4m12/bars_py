@@ -1,11 +1,10 @@
-#include <array>
 #include <cassert>
-#include <iostream>
 
-#include <bars/fwav.h>
+#include "bars/fwav.h"
 
 namespace NSound::Fwav {
-WaveInfo::WaveInfo(AudioReader& reader) {
+WaveInfo::WaveInfo(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
     codec = reader.read<Fstm::StreamInfo::Codec>();
     loop_flag = reader.read<uint8_t>();
@@ -36,29 +35,29 @@ WaveInfo::WaveInfo(AudioReader& reader) {
     }
 }
 
-DataBlock::DataBlock(AudioReader& reader) {
+DataBlock::DataBlock(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
     pcm16.resize((header.section_size / 2) - 4);
     for (auto& sample : pcm16)
         sample = reader.read<uint16_t>();
 }
 
-WaveFile::WaveFile(std::vector<uint8_t>::iterator begin,
-                   std::vector<uint8_t>::iterator end) {
-
-    AudioReader reader{begin.base(), end.base()};
+WaveFile::WaveFile(AudioReader& reader) 
+{
+    std::size_t file_start {reader.tell()};
 
     header = {reader};
     if (header.bom == 0xFFFE) {
         reader.swap_endianness();
-        reader.seek(0);
+        reader.seek(file_start);
         header = {reader};
     }
 
     endianness = reader.endianness();
 
     for (auto& ref : header.block_refs) {
-        reader.seek(ref.offset);
+        reader.seek(file_start + ref.offset);
         if (ref.type == 0x7000)
             info = {reader};
         else if (ref.type == 0x7001)
@@ -66,12 +65,13 @@ WaveFile::WaveFile(std::vector<uint8_t>::iterator begin,
     }
 }
 
-std::vector<uint8_t> WaveFile::serialize() {
-    AudioWriter writer{endianness};
-
+void WaveFile::serialize(AudioWriter& writer) 
+{
+    std::size_t file_start {writer.tell()};
+    
     writer.write_audio_header(header);
     for (auto& ref : header.block_refs) {
-        writer.seek(ref.offset);
+        writer.seek(file_start + ref.offset);
         switch (ref.type) {
         case 0x7000: {
             writer.write<BlockHeader>(info.header);
@@ -107,7 +107,5 @@ std::vector<uint8_t> WaveFile::serialize() {
             break;
         }
     }
-
-    return writer.finalize();
 }
 } // namespace NSound::Fwav

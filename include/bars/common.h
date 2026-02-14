@@ -1,20 +1,16 @@
+#ifndef NSOUND_COMMON_H
+#define NSOUND_COMMON_H
+
 #include <array>
+#include <cstddef>
 #include <cstdint>
-#include <map>
 #include <optional>
-#include <span>
-#include <string>
 #include <vector>
 
 #include <binaryio/reader.h>
 #include <binaryio/writer.h>
 
-
-#ifndef NSOUND_COMMON_H
-#define NSOUND_COMMON_H
-
 namespace NSound {
-class AudioReader;
 constexpr int VALID_BOM = 0xFEFF;
 struct BlockHeader {
     std::array<uint8_t, 4> signature;
@@ -58,14 +54,13 @@ struct AudioHeader {
     std::vector<SizedReference> block_refs;
 
     AudioHeader() = default;
-    AudioHeader(AudioReader& reader);
+    AudioHeader(class AudioReader& reader);
 };
 
 class AudioReader : public binaryio::BinaryReader {
 public:
-
-    AudioReader(void* const begin, void* const end)
-        : binaryio::BinaryReader(begin, end) {}
+    AudioReader(std::istream& is)
+        : binaryio::BinaryReader(is, binaryio::endian::little) {}
 
     template <typename T>
     Table<T> read_table() {
@@ -115,8 +110,8 @@ public:
 
 class AudioWriter : public binaryio::BinaryWriter {
 public:
-    AudioWriter(binaryio::endian endianness)
-        : binaryio::BinaryWriter{endianness} {}
+    AudioWriter(std::ostream& os)
+        : binaryio::BinaryWriter(os, binaryio::endian::little) {}
 
     void write_audio_header(AudioHeader header);
 
@@ -126,7 +121,29 @@ public:
         for (auto& item : data.items)
             write<T>(item);
     }
+    
+    // https://github.com/zeldamods/oead/blob/master/src/include/oead/util/align.h#L12
+    void align_up(std::size_t n) { seek(tell() + (n - tell() % n) % n); }
 };
+
+// https://github.com/zeldamods/oead/blob/master/src/include/oead/util/hash.h#L29
+template <typename CharType = uint8_t>
+constexpr uint32_t crc32(const CharType* data, std::size_t size) {
+  uint32_t crc = 0xFFFFFFFF;
+  for (std::size_t i = 0; i < size; ++i) {
+    crc ^= uint8_t(data[i]);
+    for (std::size_t j = 0; j < 8; ++j) {
+      uint32_t mask = -(crc & 1);
+      crc = (crc >> 1) ^ (0xEDB88320 & mask);
+    }
+  }
+  return ~crc;
+}
+
+constexpr uint32_t crc32(std::string_view str) {
+  return crc32<char>(str.data(), str.size());
+}
+
 } // namespace NSound
 
 #endif

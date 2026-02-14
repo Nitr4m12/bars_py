@@ -1,9 +1,7 @@
-#include <array>
 #include <cstdint>
 
 #include "bars/common.h"
 #include "bars/fstm.h"
-#include "bars/fstp.h"
 
 #ifndef NSOUND_FWAV_H
 #define NSOUND_FWAV_H
@@ -49,10 +47,9 @@ struct WaveFile {
     binaryio::endian endianness;
 
     WaveFile() = default;
-    WaveFile(std::vector<uint8_t>::iterator begin,
-             std::vector<uint8_t>::iterator end);
+    WaveFile(AudioReader& reader);
 
-    std::vector<uint8_t> serialize();
+    void serialize(AudioWriter& writer);
 };
 } // namespace NSound::Fwav
 

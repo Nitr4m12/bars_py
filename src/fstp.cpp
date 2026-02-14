@@ -4,7 +4,8 @@
 #include "bars/fstp.h"
 
 namespace NSound::Fstp {
-PrefetchDataBlock::PrefetchDataBlock(AudioReader& reader) {
+PrefetchDataBlock::PrefetchDataBlock(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
 
     size_t table_start{reader.tell()};
@@ -22,27 +23,25 @@ PrefetchDataBlock::PrefetchDataBlock(AudioReader& reader) {
     reader.seek(offset);
 
     sample_data.resize(current_item.prefetch_size);
-
     for (int i{0}; i < current_item.prefetch_size; ++i)
         sample_data[i] = reader.read<uint8_t>();
 }
 
-PrefetchFile::PrefetchFile(std::vector<uint8_t>::iterator begin,
-                           std::vector<uint8_t>::iterator end) {
-
-    AudioReader reader{begin.base(), end.base()};
+PrefetchFile::PrefetchFile(AudioReader& reader) 
+{
+    std::size_t file_start {reader.tell()};
 
     header = {reader};
     if (header.bom == 0xFFFE) {
         reader.swap_endianness();
-        reader.seek(0);
+        reader.seek(file_start);
         header = {reader};
     }
 
     endianness = reader.endianness();
 
     for (auto& ref : header.block_refs) {
-        reader.seek(ref.offset);
+        reader.seek(file_start + ref.offset);
         if (ref.type == 0x4000)
             info = {reader};
         else if (ref.type == 0x4004)
@@ -50,15 +49,16 @@ PrefetchFile::PrefetchFile(std::vector<uint8_t>::iterator begin,
     }
 }
 
-std::vector<uint8_t> PrefetchFile::serialize() {
-    AudioWriter writer{endianness};
+void PrefetchFile::serialize(AudioWriter& writer) 
+{
+    std::size_t file_start {writer.tell()};
 
     writer.write_audio_header(header);
     for (auto& ref : header.block_refs) {
-        writer.seek(ref.offset);
+        writer.seek(file_start + ref.offset);
         switch (ref.type) {
         case 0x4000: {
-            writer.write<BlockHeader>(info.header);
+            writer.write(info.header);
 
             size_t ref_array_start = writer.tell();
             writer.write<Reference>(info.stminfo_ref);
@@ -114,6 +114,7 @@ std::vector<uint8_t> PrefetchFile::serialize() {
 
             writer.seek(pref_data_start +
                         pdat.prefetch_data.items[0].to_prefetch_samples.offset);
+            writer.align_up(0x20);
             for (auto& sample : pdat.sample_data)
                 writer.write<uint8_t>(sample);
         }
@@ -121,7 +122,5 @@ std::vector<uint8_t> PrefetchFile::serialize() {
             break;
         }
     }
-
-    return writer.finalize();
 }
 } // namespace NSound::Fstp

@@ -2,12 +2,14 @@
 #include "bars/common.h"
 
 namespace NSound::Amta {
-Strg::Strg(AudioReader& reader) {
+Strg::Strg(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
     asset_name = reader.read_string(header.section_size);
 }
 
-Ext_::Ext_(AudioReader& reader) {
+Ext_::Ext_(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
     entry_count = reader.read<uint32_t>();
 
@@ -18,7 +20,8 @@ Ext_::Ext_(AudioReader& reader) {
     }
 }
 
-Marker::Marker(AudioReader& reader) {
+Marker::Marker(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
     entry_count = reader.read<uint32_t>();
 
@@ -29,37 +32,34 @@ Marker::Marker(AudioReader& reader) {
     }
 }
 
-AmtaFile::AmtaFile(std::vector<uint8_t>::iterator begin,
-                   std::vector<uint8_t>::iterator end) {
-
-    AudioReader reader{begin.base(), end.base()};
+AmtaFile::AmtaFile(AudioReader& reader) 
+{
+    std::size_t file_start {reader.tell()};
 
     header = reader.read<Header>();
     if (header.bom == 0xFFFE) {
         reader.swap_endianness();
-        reader.seek(0);
+        reader.seek(file_start);
         header = reader.read<Header>();
     }
 
     endianness = reader.endianness();
 
-
-    reader.seek(header.data_offset);
+    reader.seek(file_start + header.data_offset);
     data = reader.read<Data>();
 
-    reader.seek(header.marker_offset);
+    reader.seek(file_start + header.marker_offset);
     marker = Marker{reader};
 
-    reader.seek(header.ext_offset);
+    reader.seek(file_start + header.ext_offset);
     ext = Ext_{reader};
 
-    reader.seek(header.strg_offset);
+    reader.seek(file_start + header.strg_offset);
     strg = Strg{reader};
 }
 
-std::vector<uint8_t> AmtaFile::serialize() {
-    AudioWriter writer{endianness};
-
+void AmtaFile::serialize(AudioWriter& writer) 
+{
     size_t amta_start{writer.tell()};
     writer.write(header.signature);
     writer.write(header.bom);
@@ -75,18 +75,18 @@ std::vector<uint8_t> AmtaFile::serialize() {
 
     writer.seek(amta_start + header.marker_offset);
     writer.write(marker.header);
+    writer.write(marker.entry_count);
     for (auto& marker_info : marker.marker_infos)
         writer.write(marker_info);
 
     writer.seek(amta_start + header.ext_offset);
     writer.write(ext.header);
+    writer.write(ext.entry_count);
     for (auto& entry : ext.ext_entries)
         writer.write(entry);
 
     writer.seek(amta_start + header.strg_offset);
     writer.write(strg.header);
-    writer.write_cstr(strg.asset_name);
-
-    return writer.finalize();
+    writer.write_cstring(strg.asset_name);
 }
 } // namespace NSound::Amta

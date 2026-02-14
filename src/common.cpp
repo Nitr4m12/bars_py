@@ -19,7 +19,8 @@ enum class ReferenceTypes {
     WaveData
 };
 
-AudioHeader::AudioHeader(AudioReader& reader) {
+AudioHeader::AudioHeader(AudioReader& reader) 
+{
     signature = reader.read<typeof(signature)>();
     bom = reader.read<uint16_t>();
     head_size = reader.read<uint16_t>();
@@ -33,7 +34,8 @@ AudioHeader::AudioHeader(AudioReader& reader) {
         block_ref = reader.read<NSound::SizedReference>();
 }
 
-void AudioWriter::write_audio_header(AudioHeader header) {
+void AudioWriter::write_audio_header(AudioHeader header) 
+{
     write(header.signature);
     write<uint16_t>(VALID_BOM);
     write<uint16_t>(header.head_size);

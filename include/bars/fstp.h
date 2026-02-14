@@ -1,11 +1,10 @@
-#include <array>
+#ifndef NSOUND_FSTP_H
+#define NSOUND_FSTP_H
+
 #include <cstdint>
 
 #include "bars/common.h"
 #include "bars/fstm.h"
-
-#ifndef NSOUND_FSTP_H
-#define NSOUND_FSTP_H
 
 namespace NSound::Fstp {
 struct PrefetchData {
@@ -37,10 +36,9 @@ struct PrefetchFile {
     binaryio::endian endianness;
 
     PrefetchFile() = default;
-    PrefetchFile(std::vector<uint8_t>::iterator begin,
-                 std::vector<uint8_t>::iterator end);
+    PrefetchFile(AudioReader& reader);
 
-    std::vector<uint8_t> serialize();
+    void serialize(AudioWriter& writer);
 };
 
 } // namespace NSound::Fstp

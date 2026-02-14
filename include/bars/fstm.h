@@ -1,10 +1,10 @@
+#ifndef NSOUND_FSTM_H
+#define NSOUND_FSTM_H
+
 #include <cstdint>
 #include <vector>
 
 #include "bars/common.h"
-
-#ifndef NSOUND_FSTM_H
-#define NSOUND_FSTM_H
 
 namespace NSound::Fstm {
 struct TrackInfo {
@@ -34,11 +34,11 @@ struct StreamInfo {
     uint32_t last_block_padding_size{0};
     uint32_t seek_size{0};
     uint32_t sisc{0};
-    Reference to_sample_data{0x1f00,
-                             0}; // relative to the start of the prefetch data
+    Reference to_sample_data{0x1f00, 0}; // relative to the start of the prefetch data
     uint16_t region_info_size{0};
     uint8_t padding[2]{0, 0};
     Reference region_ref{0x4003, 0};
+    Reference to_sample_data2{0x1f00, 0}; // might be irrelevant
 
     BINARYIO_DEFINE_FIELDS(StreamInfo, codec, is_loop, channel_count,
                            region_count, sample_rate, loop_start, sample_count,

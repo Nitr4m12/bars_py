@@ -1,16 +1,17 @@
 #include <stdexcept>
 
-#include <bars/bars.h>
+#include "bars/bars.h"
 
 namespace NSound::Bars {
-void ResourceHeader::init(AudioReader& reader) {
+ResourceHeader::ResourceHeader(AudioReader& reader) 
+{
     signature = reader.read<typeof(signature)>();
     file_size = reader.read<uint32_t>();
     bom = reader.read<uint16_t>();
     if (bom == 0xFFFE) {
         reader.swap_endianness();
         reader.seek(0);
-        init(reader);
+        *this = {reader};
         return;
     }
     version = reader.read<uint16_t>();
@@ -28,10 +29,9 @@ void ResourceHeader::init(AudioReader& reader) {
     }
 }
 
-BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
-    AudioReader reader {buffer.begin().base(), buffer.end().base()};
-
-    m_header.init(reader);
+BarsFile::BarsFile(AudioReader& reader) 
+{
+    m_header = {reader};
     endianness = reader.endianness();
 
     {
@@ -47,17 +47,20 @@ BarsFile::BarsFile(std::vector<uint8_t>& buffer) {
     m_files.resize(m_header.asset_count);
     for (int i{0}; i < m_header.asset_count; ++i) {
         reader.seek(m_header.file_entries[i].amta_offset);
-        m_files[i].metadata = {buffer.begin() + reader.tell(), buffer.end()};
+        m_files[i].metadata = Amta::AmtaFile{reader};
+
         reader.seek(m_header.file_entries[i].asset_offset);
-        std::string sign{reader.read_string(4)};
+
+        std::string sign{reader.read<char>()};
+        sign.push_back(reader.read<char>());
+        sign.push_back(reader.read<char>());
+        sign.push_back(reader.read<char>());
 
         reader.seek(m_header.file_entries[i].asset_offset);
         if (sign == "FSTP")
-            m_files[i].audio = Fstp::PrefetchFile{
-                buffer.begin() + reader.tell(), buffer.end()};
+            m_files[i].audio = Fstp::PrefetchFile{reader};
         else if (sign == "FWAV")
-            m_files[i].audio =
-                Fwav::WaveFile{buffer.begin() + reader.tell(), buffer.end()};
+            m_files[i].audio = Fwav::WaveFile{reader};
         else
             throw std::runtime_error("Invalid asset header");
     }
@@ -78,8 +81,7 @@ void BarsFile::swap_endianness() {
             break;
         }
         case Amta::Data::Type::Stream: {
-            Fstp::PrefetchFile& fstp =
-                std::get<Fstp::PrefetchFile>(file.audio);
+            Fstp::PrefetchFile& fstp = std::get<Fstp::PrefetchFile>(file.audio);
             fstp.endianness = endianness;
             break;
         }
@@ -89,8 +91,9 @@ void BarsFile::swap_endianness() {
     }
 }
 
-std::vector<uint8_t> BarsFile::serialize() {
-    AudioWriter writer{endianness};
+void BarsFile::serialize(AudioWriter& writer) 
+{
+    writer.set_endianness(endianness);
 
     writer.write(m_header.signature);
     writer.write(m_header.file_size);
@@ -105,34 +108,27 @@ std::vector<uint8_t> BarsFile::serialize() {
         writer.write(file_entry);
 
     for (int i{0}; i < m_files.size(); ++i) {
-        std::vector<uint8_t> amta_bytes = m_files[i].metadata.serialize();
-        std::vector<uint8_t> asset_bytes;
+        writer.seek(m_header.file_entries[i].amta_offset);
+        m_files[i].metadata.serialize(writer);
+    }
+
+    for (int i{0}; i < m_files.size(); ++i) {
+        writer.seek(m_header.file_entries[i].asset_offset);
         switch (m_files[i].metadata.data.type) {
         case Amta::Data::Type::Wave: {
             Fwav::WaveFile fwav = std::get<Fwav::WaveFile>(m_files[i].audio);
-            asset_bytes = fwav.serialize();
+            fwav.serialize(writer);
             break;
         }
         case Amta::Data::Type::Stream: {
-            Fstp::PrefetchFile fstp =
-                std::get<Fstp::PrefetchFile>(m_files[i].audio);
-            asset_bytes = fstp.serialize();
+            Fstp::PrefetchFile fstp = std::get<Fstp::PrefetchFile>(m_files[i].audio);
+            fstp.serialize(writer);
             break;
         }
         default:
             throw std::runtime_error("Invalid file type!");
         }
-
-        writer.seek(m_header.file_entries[i].amta_offset);
-        for (uint8_t byte : amta_bytes)
-            writer.write<uint8_t>(byte);
-
-        writer.seek(m_header.file_entries[i].asset_offset);
-        for (uint8_t byte : asset_bytes)
-            writer.write<uint8_t>(byte);
     }
-
-    return writer.finalize();
 }
 
 } // namespace NSound::Bars

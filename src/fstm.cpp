@@ -1,7 +1,8 @@
 #include "bars/fstm.h"
 
 namespace NSound::Fstm {
-InfoBlock::InfoBlock(AudioReader& reader) {
+InfoBlock::InfoBlock(AudioReader& reader) 
+{
     header = reader.read<BlockHeader>();
 
     size_t ref_array_start = reader.tell();

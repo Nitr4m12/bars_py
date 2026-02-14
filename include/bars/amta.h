@@ -1,14 +1,11 @@
-#include <array>
-#include <cstdint>
-#include <iostream>
-#include <vector>
-
-#include <oead/util/binary_reader.h>
-
-#include "bars/common.h"
-
 #ifndef NSOUND_AMTA_H
 #define NSOUND_AMTA_H
+
+#include <array>
+#include <cstdint>
+#include <vector>
+
+#include "bars/common.h"
 
 namespace NSound::Amta {
 struct Data {
@@ -70,7 +67,8 @@ struct Ext_ {
     uint32_t entry_count{0};
 
     struct ExtEntry {
-        uint32_t unknown[2];
+        uint32_t name_offset;
+        float value;
     };
     std::vector<ExtEntry> ext_entries; // size = this.entry_count
 
@@ -111,10 +109,9 @@ struct AmtaFile {
     binaryio::endian endianness;
 
     AmtaFile() = default;
-    AmtaFile(std::vector<uint8_t>::iterator begin,
-             std::vector<uint8_t>::iterator end);
+    AmtaFile(AudioReader& reader);
 
-    std::vector<uint8_t> serialize();
+    void serialize(AudioWriter& writer);
 };
 } // Namespace NSound::Amta
 

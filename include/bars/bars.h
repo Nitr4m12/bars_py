@@ -11,13 +11,9 @@
 
 #include <array>
 #include <cstdint>
-#include <iostream>
-#include <map>
 #include <string>
 #include <variant>
 #include <vector>
-
-#include <oead/util/hash.h>
 
 #include "bars/amta.h"
 #include "bars/common.h"
@@ -45,7 +41,7 @@ struct ResourceHeader {
     std::vector<FileEntry> file_entries;
 
     ResourceHeader() = default;
-    void init(AudioReader& reader);
+    ResourceHeader(AudioReader& reader);
 };
 
 class BarsFile {
@@ -54,18 +50,19 @@ public:
         Amta::AmtaFile metadata;
         std::variant<Fstp::PrefetchFile, Fwav::WaveFile> audio;
     };
-
-    BarsFile(std::vector<uint8_t>& buffer);
+    
+    BarsFile(std::string file_name);
+    BarsFile(AudioReader& reader);
 
     void swap_endianness();
-    std::vector<uint8_t> serialize();
+    void serialize(AudioWriter& writer);
 
     std::vector<FileWithMetadata> get_files() { return m_files; }
 
     FileWithMetadata get_file(int idx) { return m_files[idx]; }
 
     FileWithMetadata get_file(std::string name) {
-        uint32_t hash{oead::util::crc32(name)};
+        uint32_t hash{crc32(name)};
         int idx{lookup(m_header.crc32hashes, hash)};
         if (idx < 0)
             throw std::runtime_error("BarsFile: File not found");

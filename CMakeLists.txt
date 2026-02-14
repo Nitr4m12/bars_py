@@ -6,15 +6,10 @@ project(libbars VERSION 1.0.0 LANGUAGES CXX)
 set(ABSL_PROPAGATE_CXX_STD ON)
 
 include(FetchContent)
-FetchContent_Declare(
-    oead
-    GIT_REPOSITORY https://github.com/zeldamods/oead.git
-)
-FetchContent_MakeAvailable(oead)
 
 FetchContent_Declare(
     binaryio
-    GIT_REPOSITORY https://gitlab.com/Nitr4m12/simple-binaryio
+    GIT_REPOSITORY https://gitlab.com/Nitr4m12/binaryio
 )
 FetchContent_MakeAvailable(binaryio)
 
@@ -39,7 +34,6 @@ target_include_directories(bars
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_link_libraries(bars oead)
 target_link_libraries(bars binaryio)
 target_compile_features(bars PUBLIC cxx_std_20)
 
